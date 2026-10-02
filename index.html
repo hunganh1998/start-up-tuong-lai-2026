@@ -2011,17 +2011,54 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
             return c
         };
 
-        function charShadow(x, y, w = 7) {
+        function gShadow(cx, y, w, a, fixed) {
             const k = Math.max(-1, Math.min(1, (DAY.h - 12) / 5)),
                 n = lighting().night,
-                o = Math.round(k * 4),
-                l = w + Math.abs(k) * 4;
-            al(n ? .1 : .3, () => {
-                R(x - l / 2 + o, y - 1, l, 1, '#0a1230');
-                R(x - l / 2 + o + 1, y, l - 2, 1, '#0a1230');
-                R(x - l / 2 + o + 2, y - 2, l - 4, 1, '#0a1230')
+                o = fixed ? 0 : Math.round(k * w * .25),
+                l = w + Math.abs(k) * 4,
+                x = Math.round(cx - l / 2 + o);
+            al(n ? .12 : a, () => {
+                R(x + 1, y - 2, l - 2, 1, '#0a1230');
+                R(x, y - 1, l, 1, '#0a1230');
+                R(x + 1, y, l - 2, 1, '#0a1230')
+            });
+            al(n ? .1 : a * .9, () => R(x + (l >> 2), y - 1, l >> 1, 1, '#05081c'))
+        }
+        function charShadow(x, y, w = 7) { gShadow(x, y, w, .3) }
+        const _dv = drawVehicle;
+        drawVehicle = (x, y, t, c) => {
+            const w = t === 'bike' ? 16 : 36;
+            gShadow(x + w / 2, y, w, .32, 1);
+            _dv(x, y, t, c)
+        };
+        const _dt = drawTree;
+        drawTree = (x, b, s, sd) => {
+            const r = Math.round(5 * s) + 2;
+            al(.28, () => {
+                R(x - r + 1, b - 1, 2 * r - 1, 1, '#0a1230');
+                R(x - r, b, 2 * r + 1, 1, '#0a1230');
+                R(x - r + 2, b + 1, 2 * r - 3, 1, '#0a1230')
+            });
+            _dt(x, b, s, sd)
+        };
+        function groundAO(BB) {
+            BB.forEach(b => {
+                if (typeof b.x !== 'number' || typeof b.w !== 'number') return;
+                const x = b.x, w = b.w;
+                al(.24, () => R(x, BASE, w + 5, 1, '#0a1230'));
+                al(.14, () => R(x, BASE + 1, w + 4, 1, '#0a1230'));
+                al(.2, () => {
+                    for (let i = 0; i < 7; i++)
+                        for (let j = 0; j < 4; j++)
+                            if ((i + j) % 2 === 0 && i + j < 7) px(x + w + 1 + i, BASE + j, '#0a1230')
+                })
             })
         }
+        const _dp = drawPlaza;
+        drawPlaza = (...a) => {
+            _dp(...a);
+            if (!a[0]) groundAO(B)
+        };
         const GL = mk(32, 32),
             VG = mk(),
             SUN = mk();
@@ -2412,6 +2449,7 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
             ANGRY: ['!', '#d62a2a'],
             TALK: ['...', '#3a4a8a']
         };
+        const DSC = y => y < 172 ? .92 : y > 188 ? 1.06 : 1;
         class Character {
             constructor(o) {
                 Object.assign(this, {
@@ -2465,8 +2503,7 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
                 const x = Math.round(this.x),
                     y = Math.round(this.y),
                     f = SpriteManager.get(this.role, this.dir, this.state, this.frame),
-                    w = 48 * CFG.scale,
-                    h = 64 * CFG.scale;
+                    k = DSC(y), w = 2 * Math.round(24 * CFG.scale * k), h = Math.round(64 * CFG.scale * k);
                 if (this.dir === 'right') {
                     g.save();
                     g.translate(x, 0);
@@ -8936,9 +8973,9 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
                 law: ['Cổ đông, hợp đồng và sở hữu trí tuệ rõ ràng.', 'Một số hợp đồng thiếu chữ ký hoặc phụ lục.', 'Cap table lệch: có cam kết cổ phần chưa ghi nhận và điều khoản bất lợi.', 'Quyền sở hữu tài sản cốt lõi bị tranh chấp.'],
                 oth: ['Không có phát hiện trọng yếu.', 'Cần bổ sung hồ sơ tuân thủ.', 'Rủi ro vận hành chưa được kiểm soát.', 'Rủi ro này đe dọa cả mô hình kinh doanh.']
             };
-        const ddF = () => Math.min(3, !CO.prep.fin + !CO.prep.audit + (CO.debt > CO.val * .25) + (Math.random() < .3)),
-            ddL = () => Math.min(3, (CO.prep.law ? 0 : 2) + (Math.random() < .3 ? 1 : 0)),
-            ddO = () => Math.min(3, (CO.credit < 60) + (CO.rep > 0) + (Math.random() < .35));
+        const ddF = () => Math.min(3, !CO.prep.fin + !CO.prep.audit + (CO.debt > CO.val * .25) + (Math.random() < .3) + CHX.rk('fin')),
+            ddL = () => Math.min(3, (CO.prep.law ? 0 : 2) + (Math.random() < .3 ? 1 : 0) + CHX.rk('law')),
+            ddO = () => Math.min(3, (CO.credit < 60) + (CO.rep > 0) + (Math.random() < .35) + CHX.rk('oth'));
 
         function ddApply(s, t, v) {
             const tr0 = s.trust,
@@ -10386,6 +10423,28 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
             Commuter.prototype.draw = function() {
                 if (this.s) charShadow(this.x, this.y, 6);
                 return md.call(this)
+            }
+        }
+        {
+            const pd = Player.prototype.draw;
+            Player.prototype.draw = function() {
+                pd.call(this);
+                if (G.dlg.on || G.q) return;
+                const t = G.time, x = Math.round(this.x), y = Math.round(this.y),
+                    hh = Math.round(32 * DSC(y)),
+                    up = Math.max((ICON[this.state] || this.state === 'HAPPY') ? 13 : 0,
+                        (G.target && !G.target.n) ? 15 : 0),
+                    bob = Math.round(Math.sin(t * 5) * 1.5),
+                    ay = y - hh - 6 - up + bob,
+                    A = ['1111111', '0111110', '0011100', '0001000'];
+                spr(x - 3, ay + 1, A, ['#0e1730']);
+                spr(x - 3, ay, A, [Math.sin(t * 5) > 0 ? '#ffe9a6' : '#f2c46b']);
+                const n = (t / 2.5 | 0) % 2 ? 'YOU' : 'CEO', bw = tw(n) + 4,
+                    bx = Math.max(2, Math.min(W - bw - 2, x - (bw >> 1))), by = ay - 12;
+                R(bx - 1, by - 1, bw + 2, 11, '#0e1730');
+                R(bx, by, bw, 9, '#f2c46b');
+                R(bx, by, bw, 1, '#ffe9a6');
+                textC(n, bx + (bw >> 1), by + 2, '#0e1730')
             }
         }
 
@@ -12560,6 +12619,951 @@ console.log('✅ PHỐ CHÙA BỘC + 7 SHOP: OK');
   console.error('❌ LỖI PHỐ CHÙA BỘC:', err);
   console.error(err.stack);
 }
+/* ===== CHX: THỬ THÁCH THEO KHU VỰC (NHÀ MÁY 'f' / CHỢ 'm') - DỮ LIỆU + ENGINE DÙNG CHUNG ===== */
+/* Thêm thử thách mới = thêm 1 object vào CHD. Cú pháp:
+   {id, m:'f'|'m', lv:vòng tối thiểu(0-2), h:tiêu đề, tw:()=>biến ngẫu nhiên T, e:{thưởng hoàn thành},
+    st:[{w:'TÊN NPC' | [x,y,'NHÃN'] (điểm khám phá), g:mục tiêu, s:(S,T,L)=>[lời thoại],
+         q:[{r:câu hỏi, f:(S,T)=>hiển thị?, o:[[lựa chọn, hiệu ứng, phản hồi, 'thẻ', cần-thẻ, hiệu ứng-nếu-thiếu, phản hồi-nếu-thiếu]]}]}]}
+   hiệu ứng: c=tiền (đơn vị tháng burn), cr=tín dụng, m=tinh thần, b=burn%, t=tin tưởng quỹ, v=định giá%, p=điểm
+   thẻ: 't:x' đánh dấu đã làm, 'r:fin|law|oth' để lại rủi ro cho DD, 'i' +1 thông tin cho buổi gọi vốn */
+var CHX = (() => {
+    const rn = (a, b) => a + (Math.random() * (b - a + 1) | 0),
+        sf = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(x => x[1]),
+        KM = {
+            industrialZone: 'f',
+            chuaBoc: 'm'
+        },
+        LX = {
+            saas: {o: 'gói thuê bao', s: 'license chưa kích hoạt', l: 'cụm máy chủ', c: 'chi phí hạ tầng cloud'},
+            food: {o: 'suất ăn', s: 'nguyên liệu tươi', l: 'dây chuyền bếp', c: 'giá nguyên liệu'},
+            ecom: {o: 'đơn hàng', s: 'hàng tồn kho', l: 'dây chuyền đóng gói', c: 'chi phí vận chuyển'},
+            edu: {o: 'khóa học', s: 'slot lớp chưa bán', l: 'lớp và giảng viên', c: 'chi phí giảng viên'},
+            fintech: {o: 'khoản vay', s: 'hạn mức chưa giải ngân', l: 'đội thẩm định', c: 'chi phí vốn và nợ xấu'},
+            health: {o: 'lượt khám', s: 'vật tư y tế', l: 'phòng khám', c: 'chi phí bác sĩ'}
+        },
+        X = {r: -1, n: -1, a: {}, used: {}, tg: {}, i: 0, rk: []},
+        lx = () => Object.assign({cu: IND[ST.k].cu}, LX[ST.k]),
+        v = (x, a) => typeof x === 'function' ? x(ST, a.T, lx()) : x,
+        /* ---------- DỮ LIỆU THỬ THÁCH ---------- */
+        CHD = [{
+            id: 'f1', m: 'f', lv: 0, h: 'CHUẨN BỊ ĐÓN NHÀ ĐẦU TƯ',
+            tw: () => ({g: rn(6, 14), u: rn(58, 82), k: rn(0, 2), d: _pk(['biên bản nghiệm thu máy', 'hóa đơn nhập nguyên liệu quý trước', 'giấy phép PCCC'])}),
+            e: {t: 2, v: 2, p: 10},
+            st: [{
+                w: 'QUẢN ĐỐC', g: 'GẶP QUẢN ĐỐC', s: (S, T, L) => [`Quỹ sắp đến xem ${S.name}. Họ sẽ nhìn ${L.l}, ${L.s} và sổ sách.`, 'Sếp muốn tôi chuẩn bị theo hướng nào?'],
+                q: [{r: 'Chỉ còn ít ngày trước giờ đón đoàn. Ưu tiên chuẩn bị gì?', o: [
+                    ['Rà thật: kiểm kho, hỏi từng ca, ghi lại vấn đề', {m: 3, p: 3}, 'Quản đốc chia việc theo ca. Cả nhà máy biết quỹ sẽ hỏi gì.', 't:plan i'],
+                    ['Dọn dẹp khu tiếp khách cho thật đẹp', {c: -.1}, 'Nhà máy sạch bóng, nhưng số liệu bên trong chưa ai kiểm lại.', 't:show'],
+                    ['Giao hết cho quản đốc, mình chỉ ra đón khách', {m: -3}, 'Quản đốc làm được việc nhưng thiếu quyết định của sếp.', '']]}]
+            }, {
+                w: 'KỸ SƯ', g: 'HỎI KỸ SƯ VỀ MÁY', s: (S, T, L) => [`${L.l} đang chạy ${T.u}% công suất.`, `Máy dừng nhiều vì ${['thiếu phụ tùng', 'bảo trì trễ', 'vận hành sai quy trình'][T.k]}.`],
+                q: [{r: 'Quỹ sắp đến. Xử lý sự cố máy này thế nào?', o: [
+                    ['Dừng 2 giờ sửa tận gốc, ghi số liệu trước và sau', {c: -.25, m: 2}, 'Hiệu suất tăng và có số liệu để trình quỹ.', 't:fixed i'],
+                    ['Ghi nhận thời gian dừng, lên kế hoạch sửa sau', {m: 1}, 'Số liệu trung thực, kế hoạch rõ. Chưa tối ưu nhưng minh bạch.', 't:logged i'],
+                    ['Chạy tiếp, dặn ca đêm đừng báo lỗi', {}, 'Tạm yên ổn, nhưng nhật ký máy vẫn ghi lại những lần dừng.', 'r:oth']]}]
+            }, {
+                w: [160, 176, 'KHO TỒN'], g: 'KIỂM KHO TỒN', s: (S, T, L) => [`Sổ kho ghi nhiều hơn thực tế ${T.g}% ${L.s}.`, 'Chênh lệch này sẽ lộ ngay khi quỹ đếm kho.'],
+                q: [{r: (S, T, L) => `Sổ và kho lệch ${T.g}% ${L.s}. Xử lý thế nào?`, o: [
+                    ['Đếm lại, tìm nguyên nhân, điều chỉnh sổ có biên bản', {c: -.05, p: 3}, 'Nguyên nhân: xuất kho chưa ghi và hao hụt. Sổ điều chỉnh có chứng từ.', 't:inv i'],
+                    ['Sửa số trên sổ cho khớp, không ghi lý do', {}, 'Số khớp ngay, nhưng không có chứng từ giải thích.', 'r:fin'],
+                    ['Để nguyên, hy vọng quỹ không đếm', {}, 'Rủi ro bị phát hiện ngay khi thẩm định.', 'r:fin']]}]
+            }, {
+                w: 'VĂN PHÒNG', g: 'TÌM HỒ SƠ THIẾU', s: (S, T) => [`Em chưa tìm thấy ${T.d}.`, 'Quỹ thường yêu cầu hồ sơ này khi thẩm định.'],
+                q: [{r: (S, T) => `Thiếu ${T.d}. Cách xử lý?`, o: [
+                    ['Xin cấp lại và ghi chú rõ ngày bổ sung', {c: -.05}, 'Hồ sơ cấp lại có dấu và ngày thật. Data room đầy đủ hơn.', 't:doc i'],
+                    ['Báo trước cho quỹ là đang bổ sung', {t: 1}, 'Quỹ thích sự chủ động. Mất thêm vài ngày nhưng giữ được uy tín.', 't:doc'],
+                    ['Làm giấy lùi ngày cho kịp', {}, 'Có giấy, nhưng là rủi ro pháp lý nghiêm trọng nếu bị đối chiếu.', 'r:law']]}]
+            }, {
+                w: 'NHÂN SỰ', g: 'CHUẨN BỊ NHÂN SỰ', s: () => ['Quỹ sẽ hỏi công nhân ca đêm về an toàn và quy trình.'],
+                q: [{r: 'Chuẩn bị đội ngũ thế nào?', o: [
+                    ['Tập huấn nhanh: ai cũng biết quy trình và báo lỗi thẳng', {m: 2, c: -.05}, 'Đội ngũ tự tin trả lời, không né tránh.', 't:staff'],
+                    ['Cho nghỉ ca để nhà máy yên tĩnh khi đoàn đến', {c: -.1}, 'Nhà máy vắng, quỹ khó đánh giá năng suất thật.', ''],
+                    ['Dặn mọi người chỉ nói "mọi thứ ổn"', {m: -4}, 'Công nhân lo lắng, sẽ lúng túng nếu bị hỏi sâu.', 'r:oth']]}]
+            }, {
+                w: 'NHÀ ĐẦU TƯ THĂM NHÀ MÁY', g: 'TRẢ LỜI NHÀ ĐẦU TƯ', s: (S) => [`Tôi đến xem ${S.prod} được làm ra thế nào.`, 'Tôi sẽ hỏi vài câu về máy, kho và hồ sơ.'],
+                q: [{r: (S, T) => `Công suất ${T.u}% và máy hay dừng. Anh chị trả lời sao?`, o: [
+                    ['Trình số liệu dừng máy, nguyên nhân, kế hoạch sửa', {t: 4, v: 2}, 'Quỹ ghi nhận sự trung thực và kế hoạch rõ ràng.', '', 'fixed|logged', {t: -3}, 'Bạn chưa có số liệu dừng máy. Câu trả lời thiếu căn cứ.'],
+                    ['Nói máy móc rất ổn định', {t: -4}, 'Nhật ký máy cho thấy ngược lại. Quỹ ghi nhận sự thiếu nhất quán.', 'r:oth'],
+                    ['Nói đó là chuyện vận hành nhỏ', {t: -1}, 'Quỹ không hài lòng nhưng bỏ qua.', '']]},
+                    {r: 'Quỹ đếm kho và thấy sổ lệch thực tế. Giải thích?', o: [
+                    ['Trình biên bản đối chiếu và nguyên nhân lệch', {t: 4, v: 2}, 'Biên bản khớp số đếm. Quỹ yên tâm về kiểm soát nội bộ.', '', 'inv', {t: -5, v: -3}, 'Bạn không có biên bản đối chiếu. Quỹ nghi ngờ sổ kho.'],
+                    ['Nói chênh lệch nhỏ, không đáng lo', {t: -2}, 'Quỹ ghi chú lại và sẽ hỏi kế toán.', ''],
+                    ['Đề nghị quỹ đừng đếm kho', {t: -5}, 'Quỹ coi đây là dấu hiệu đáng ngờ.', 'r:fin']]},
+                    {f: () => CH.n > 1, r: (S, T) => `Quỹ xin xem ${T.d} và danh mục hồ sơ.`, o: [
+                    ['Đưa hồ sơ đã bổ sung kèm danh mục', {t: 3}, 'Hồ sơ đầy đủ, quỹ chuyển sang chủ đề tiếp theo.', '', 'doc', {t: -4, cr: -2}, 'Hồ sơ còn thiếu. Quỹ yêu cầu bổ sung và mất thiện cảm.'],
+                    ['Hẹn gửi sau, quỹ đừng ghi vào biên bản', {t: -3}, 'Quỹ ghi nhận hồ sơ còn thiếu.', 'r:law']]}]
+            }]
+        }, {
+            id: 'f2', m: 'f', lv: 0, h: 'KIỂM TOÁN ĐỐI CHIẾU SỔ SÁCH',
+            tw: () => ({k: rn(0, 2), m: rn(15, 38), e: rn(6, 16)}),
+            e: {t: 2, cr: 3, p: 10},
+            st: [{
+                w: 'CHUYÊN GIA KIỂM TRA', g: 'GẶP KIỂM TOÁN VIÊN', s: (S) => [`Tôi sẽ đối chiếu doanh thu, giá vốn, biên lợi nhuận và hiệu suất của ${S.name}.`, 'Bắt đầu từ bộ phận quản lý.'],
+                q: [{r: 'Bạn hợp tác với kiểm toán thế nào?', o: [
+                    ['Mở toàn bộ sổ, cử người đối chiếu cùng', {m: 1}, 'Kiểm toán ghi nhận sự hợp tác.', 't:open'],
+                    ['Chỉ đưa tài liệu khi được hỏi', {t: -1}, 'Kiểm toán làm việc chậm và thêm nghi ngờ.', ''],
+                    ['Giới hạn quyền truy cập dữ liệu', {t: -3}, 'Kiểm toán cho rằng có điều bị giấu.', 'r:fin']]}]
+            }, {
+                w: 'QUẢN LÝ', g: 'HỎI QUẢN LÝ VỀ BIÊN', s: (S, T, L) => [`Biên gộp thực tế chỉ ${T.m}%, thấp hơn báo cáo.`, `Sản lượng ${L.o} và chi phí đang lệch ${T.e}%.`],
+                q: [{r: 'Biên thực tế thấp hơn báo cáo. Bạn làm gì?', o: [
+                    ['Đối chiếu từng đơn với chi phí nguyên liệu và nhân công', {c: -.05, p: 3}, 'Tìm ra khoản chi phí chưa phân bổ đúng.', 't:cogs i'],
+                    ['Điều chỉnh phân bổ chi phí cho biên đẹp hơn', {}, 'Biên đẹp hơn trên giấy nhưng sai bản chất.', 'r:fin'],
+                    ['Chờ kế toán xử lý', {m: -1}, 'Mất thời gian, kiểm toán vẫn sẽ hỏi.', '']]}]
+            }, {
+                w: [60, 176, 'HỒ SƠ'], g: 'RÀ SOÁT HỒ SƠ', s: (S, T) => ['Bạn tìm thấy sai lệch:', ['doanh thu ghi nhận trước khi giao hàng.', 'giá vốn thiếu hóa đơn nguyên liệu.', 'hóa đơn bị ghi trùng hai lần.'][T.k]],
+                q: [{r: 'Xử lý sai lệch này thế nào?', o: [
+                    ['Ghi nhận lại đúng kỳ, lập biên bản điều chỉnh', {v: -1, p: 4}, 'Số liệu giảm nhẹ nhưng khớp. Kiểm toán ghi nhận sự trung thực.', 't:fixbook i'],
+                    ['Giữ nguyên số, giải thích sau', {}, 'Sai lệch vẫn nằm đó chờ bị phát hiện.', 'r:fin'],
+                    ['Xóa chứng từ lỗi cho gọn', {cr: -5}, 'Xóa chứng từ là vi phạm nghiêm trọng.', 'r:law r:fin']]}]
+            }, {
+                w: 'VĂN PHÒNG', g: 'ĐỐI CHIẾU TIỀN THU', s: () => ['Doanh thu ghi sổ cao hơn tiền thực thu.', 'Nhiều khách đang trả chậm 60 ngày.'],
+                q: [{r: 'Doanh thu và tiền thu lệch nhau. Xử lý?', o: [
+                    ['Lập bảng công nợ và kế hoạch thu tiền theo khách', {c: .15, p: 3}, 'Thu về một phần ngay, phần còn lại có lịch rõ.', 't:ar i'],
+                    ['Giảm giá để khách trả sớm', {c: .2, v: -2}, 'Tiền về nhanh nhưng biên lợi nhuận giảm.', 't:ar'],
+                    ['Coi như đã thu để báo cáo đẹp', {}, 'Doanh thu ảo sẽ bị kiểm toán phát hiện.', 'r:fin']]}]
+            }, {
+                w: 'CHUYÊN GIA KIỂM TRA', g: 'TRẢ LỜI KIỂM TOÁN', s: () => ['Tôi đã xem hết. Giờ cho tôi nghe giải trình của anh chị.'],
+                q: [{r: 'Kiểm toán hỏi: các điều chỉnh bạn đã làm và vì sao?', o: [
+                    ['Trình biên bản điều chỉnh, bảng công nợ, đối chiếu giá vốn', {t: 5, v: 3, cr: 3}, 'Kiểm toán ghi nhận số liệu minh bạch. Thư quản lý rất ít điểm yếu.', '', 'fixbook|cogs|ar', {t: -3, cr: -3}, 'Bạn chưa đối chiếu đủ nên giải trình thiếu số liệu. Thư quản lý nêu nhiều điểm yếu.'],
+                    ['Nói sổ sách đã ổn, không cần giải trình', {t: -4}, 'Kiểm toán ghi vào thư quản lý: giải trình chưa đầy đủ.', 'r:fin'],
+                    ['Hứa sẽ bổ sung hồ sơ sau', {t: -1}, 'Kiểm toán chấp nhận nhưng đặt hạn chót.', '']]}]
+            }]
+        }, {
+            id: 'f3', m: 'f', lv: 1, h: 'SỰ CỐ SẢN XUẤT TRƯỚC THẨM ĐỊNH',
+            tw: () => ({k: rn(0, 2), l: rn(5, 15), n: rn(2, 6)}),
+            e: {t: 2, v: 2, p: 14},
+            st: [{
+                w: 'CÔNG NHÂN', g: 'NGHE CÔNG NHÂN BÁO SỰ CỐ', s: (S, T, L) => [`Sếp ơi, ${['máy ép nóng', 'băng tải', 'máy đóng gói'][T.k]} vừa hỏng giữa ca.`, `Khoảng ${T.l}% lô ${L.o} hôm nay có thể lỗi.`],
+                q: [{r: 'Phản ứng đầu tiên của bạn?', o: [
+                    ['Dừng dây chuyền, tách lô nghi lỗi, gọi kỹ thuật', {c: -.1}, 'Lô lỗi được tách riêng, không lẫn vào đơn giao.', 't:isolate'],
+                    ['Để chạy tiếp, kiểm sau', {}, 'Lô lỗi có thể lọt vào đơn giao khách.', 'r:oth']]}]
+            }, {
+                w: 'KỸ THUẬT', g: 'HỎI KỸ THUẬT NGUYÊN NHÂN', s: (S, T) => [`Nguyên nhân là ${['thiếu bảo trì định kỳ', 'phụ tùng kém chất lượng', 'cài đặt sai thông số'][T.k]}.`, `Sửa mất khoảng ${T.n} giờ.`],
+                q: [{r: 'Sửa thế nào?', o: [
+                    ['Sửa tận gốc và ghi biên bản sự cố', {c: -.2, p: 3}, 'Sự cố có biên bản, nguyên nhân và giờ dừng máy rõ ràng.', 't:rca i'],
+                    ['Sửa tạm cho chạy lại ngay', {c: -.05}, 'Chạy lại nhanh nhưng lỗi có thể quay lại.', 'r:oth']]}]
+            }, {
+                w: [118, 176, 'DÂY CHUYỀN'], g: 'KIỂM LÔ HÀNG LỖI', s: (S, T, L) => [`Bạn kiểm lô ${L.o} nghi lỗi: ${T.l}% không đạt.`, 'Khách đang chờ đơn này.'],
+                q: [{r: 'Xử lý lô hàng này?', o: [
+                    ['Làm lại phần lỗi và báo khách giao trễ nhẹ', {c: -.15, t: 1}, 'Khách chấp nhận chờ vì được báo trước.', 't:rework'],
+                    ['Giao hết, nếu khách phàn nàn thì đổi sau', {cr: -3}, 'Khách nhận hàng lỗi, khiếu nại tăng.', 'r:oth'],
+                    ['Hủy cả lô', {c: -.35, v: -1}, 'An toàn nhưng tốn kém, đơn trễ nhiều.', '']]}]
+            }, {
+                w: 'QUẢN ĐỐC', g: 'BÁO CÁO QUẢN ĐỐC', s: () => ['Quỹ sẽ hỏi về vụ này. Sếp muốn báo cáo thế nào?'],
+                q: [{r: 'Cách bạn sẽ nói với quỹ về sự cố?', o: [
+                    ['Nêu rõ sự cố, nguyên nhân, chi phí và biện pháp phòng ngừa', {t: 3, p: 3}, 'Quản đốc soạn báo cáo ngắn gọn, đủ số liệu.', 't:report i'],
+                    ['Không nhắc, chỉ trả lời nếu quỹ hỏi', {}, 'Nếu quỹ hỏi, bạn sẽ bị động.', ''],
+                    ['Nói đây là sự cố hiếm gặp', {}, 'Nhật ký cho thấy sự cố lặp lại.', 'r:oth']]}]
+            }, {
+                w: 'NHÀ ĐẦU TƯ THĂM NHÀ MÁY', g: 'GIẢI TRÌNH VỚI QUỸ', s: () => ['Tôi nghe nói hôm nay có sự cố. Kể tôi nghe.'],
+                q: [{r: 'Quỹ hỏi về sự cố hôm nay. Bạn trả lời?', o: [
+                    ['Trình biên bản, giờ dừng máy, chi phí và cách phòng ngừa', {t: 5, v: 3}, 'Quỹ đánh giá cao khả năng xử lý khủng hoảng.', '', 'rca|report', {t: -3}, 'Bạn chưa có biên bản nên chỉ trả lời chung chung.'],
+                    ['Nói không có sự cố nào đáng kể', {t: -5, cr: -3}, 'Quỹ đã nghe công nhân kể. Mất uy tín.', 'r:oth'],
+                    ['Đổ lỗi cho nhà cung cấp phụ tùng', {t: -2}, 'Quỹ hỏi lại hợp đồng bảo trì của bạn.', '']]}]
+            }]
+        }, {
+            id: 'f4', m: 'f', lv: 2, h: 'CÔNG SUẤT VÀ KẾ HOẠCH MỞ RỘNG',
+            tw: () => ({u: rn(78, 92), q: rn(2, 5) * 100, p: rn(10, 20)}),
+            e: {t: 3, v: 4, p: 18},
+            st: [{
+                w: 'QUẢN ĐỐC', g: 'LẤY SỐ CÔNG SUẤT', s: (S, T, L) => [`${L.l} đã chạy ${T.u}% công suất nhiều tháng.`, 'Quỹ sẽ hỏi bao giờ hết chỗ và mở rộng ra sao.'],
+                q: [{r: 'Bạn chuẩn bị số liệu công suất thế nào?', o: [
+                    ['Lập bảng công suất theo tháng và đơn hàng chờ', {p: 3}, 'Bảng cho thấy nhu cầu thật và điểm nghẽn.', 't:cap i'],
+                    ['Dùng số công suất cao nhất từng đạt', {t: -1}, 'Số đẹp nhưng không phản ánh thực tế.', 'r:oth']]}]
+            }, {
+                w: 'KỸ THUẬT', g: 'XEM BÁO GIÁ THIẾT BỊ', s: (S, T) => [`Mở rộng cần đầu tư khoảng ${T.q} nghìn USD thiết bị.`, `Hoàn vốn dự kiến ${T.p} tháng nếu đủ đơn.`],
+                q: [{r: 'Quyết định đầu tư thiết bị?', o: [
+                    ['Chia hai đợt, đợt hai chỉ mua khi đủ đơn hàng', {c: -.4, p: 4}, 'Giảm rủi ro, vẫn có công suất tăng ngay.', 't:phase i'],
+                    ['Mua toàn bộ ngay bằng tiền mặt', {c: -1.2, b: 6}, 'Công suất cao nhưng tiền mặt mỏng, burn tăng.', 't:big'],
+                    ['Hoãn mở rộng để chờ quỹ rót vốn', {v: -2}, 'An toàn, nhưng mất đơn vì hết công suất.', '']]}]
+            }, {
+                w: 'QUẢN LÝ', g: 'TÍNH CHI PHÍ VÀ GIÁ', s: (S, T, L) => [`Mở rộng giúp giảm giá thành ${L.o} khoảng ${T.p}%.`, 'Nhưng cần thêm ca, thêm người.'],
+                q: [{r: 'Dùng phần giảm giá thành thế nào?', o: [
+                    ['Giữ một nửa làm biên, một nửa giảm giá cho khách lớn', {v: 2, t: 1}, 'Biên tốt hơn và giữ được khách lớn.', 't:unit i'],
+                    ['Giảm giá hết để chiếm thị phần', {v: -2}, 'Doanh số tăng nhưng biên không cải thiện.', ''],
+                    ['Giữ hết làm lợi nhuận, không đổi giá', {}, 'Biên đẹp nhưng khách lớn bắt đầu so giá.', '']]}]
+            }, {
+                w: 'NHÀ ĐẦU TƯ THĂM NHÀ MÁY', g: 'TRÌNH BÀY KẾ HOẠCH', s: () => ['Cho tôi nghe kế hoạch mở rộng và dùng vốn.'],
+                q: [{r: 'Giải thích vì sao cần vốn và mở rộng bao nhiêu?', o: [
+                    ['Nêu công suất, đơn hàng chờ, số tiền cần và mốc kết quả', {t: 5, v: 4}, 'Quỹ thấy kế hoạch có căn cứ và mốc rõ ràng.', '', 'cap', {t: -3, v: -2}, 'Bạn thiếu bảng công suất nên không chứng minh được nhu cầu.'],
+                    ['Nói cần càng nhiều tiền càng tốt', {t: -5}, 'Quỹ không đầu tư khi kế hoạch dùng vốn không rõ.', ''],
+                    ['Hứa lợi nhuận gấp đôi', {t: -4, cr: -2}, 'Cam kết không có căn cứ làm quỹ nghi ngờ.', 'r:oth']]},
+                    {r: 'Rủi ro nếu đơn hàng không tăng như dự kiến?', o: [
+                    ['Có phương án đầu tư theo đợt và điểm dừng', {t: 4}, 'Quỹ thích kế hoạch có điểm dừng.', '', 'phase', {t: -2}, 'Kế hoạch của bạn không có điểm dừng rõ ràng.'],
+                    ['Chắc chắn đơn hàng sẽ tăng', {t: -3}, 'Quỹ không tin vào sự chắc chắn tuyệt đối.', '']]}]
+            }]
+        }, {
+            id: 'm1', m: 'm', lv: 0, h: 'KHẢO SÁT NHU CẦU VÀ ĐỐI THỦ',
+            tw: () => ({p: rn(8, 25), d: rn(10, 30)}),
+            e: {t: 2, v: 2, p: 10},
+            st: [{
+                w: 'DOANH NHÂN', g: 'GẶP DOANH NHÂN Ở CHỢ', s: (S, T, L) => [`Tôi buôn bán quanh chợ này. Khách ở đây hỏi nhiều về ${S.prod}.`, `Muốn gọi vốn thì phải biết ${L.cu} cần gì và đối thủ làm gì.`],
+                q: [{r: 'Bạn thu thập thông tin theo cách nào?', o: [
+                    ['Tự đi hỏi khách và ghi số liệu', {m: 1}, 'Mất thời gian nhưng số liệu là thật.', 't:survey'],
+                    ['Nhờ đối tác gửi số liệu có sẵn', {}, 'Nhanh nhưng chưa kiểm chứng.', ''],
+                    ['Dựa vào cảm nhận của đội ngũ', {t: -1}, 'Không có số liệu, quỹ sẽ hỏi lại.', '']]}]
+            }, {
+                w: 'SINH VIÊN', g: 'HỎI KHÁCH HÀNG', s: (S, T) => [`Em thấy ${S.prod} khá hay.`, `Nhưng bên kia rẻ hơn khoảng ${T.p}% nên em cũng phân vân.`],
+                q: [{r: (S, T) => `Khách nói đối thủ rẻ hơn ${T.p}%. Bạn rút ra điều gì?`, o: [
+                    ['Hỏi thêm: khách chọn vì giá hay vì chất lượng và tiện lợi', {}, 'Khách mua vì giao nhanh và hỗ trợ tốt. Giá chỉ là một phần.', 't:why i'],
+                    ['Giảm giá ngay theo đối thủ', {c: -.3, v: -2}, 'Doanh số nhích lên nhưng biên bị bào mòn.', 't:cut'],
+                    ['Bỏ qua, khách nào cũng nói vậy', {t: -1}, 'Bạn bỏ lỡ tín hiệu thật về giá.', '']]}]
+            }, {
+                w: [250, 172, 'SẠP B'], g: 'QUAN SÁT ĐỐI THỦ', s: (S, T) => [`Sạp đối thủ đông khách hơn ${T.d}% so với tháng trước.`],
+                q: [{r: 'Bạn làm gì ở sạp đối thủ?', o: [
+                    ['Ghi giá, chất lượng, lượng khách để so với biên của mình', {p: 3}, 'Bạn có bảng so sánh để nói chuyện với quỹ.', 't:comp i'],
+                    ['Chụp ảnh rồi về', {}, 'Có ảnh nhưng thiếu số liệu so sánh.', ''],
+                    ['Nói xấu đối thủ với khách', {t: -3, cr: -2}, 'Khách không thích. Uy tín bị ảnh hưởng.', 'r:oth']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'BÁO CÁO DOANH NHÂN', s: () => ['Giờ nói tôi nghe kết luận của bạn.'],
+                q: [{r: (S, T) => `Nhu cầu tăng ${T.d}%, đối thủ rẻ ${T.p}%. Bạn đề xuất gì?`, o: [
+                    ['Giữ giá, nhấn mạnh giá trị khác biệt, thử gói giá cho khách nhạy giá', {t: 3, v: 3}, 'Đối tác thấy bạn hiểu thị trường và sẽ giới thiệu thêm khách.', '', 'why|comp', {t: -1}, 'Bạn thiếu số liệu nên đề xuất chưa thuyết phục.'],
+                    ['Giảm giá toàn bộ', {c: -.2, v: -2}, 'Biên giảm, quỹ sẽ hỏi lợi nhuận đâu.', ''],
+                    ['Tăng giá vì nhu cầu tăng', {v: -1, t: -1}, 'Đối thủ rẻ hơn nên khách dễ rời đi.', '']]}]
+            }]
+        }, {
+            id: 'm2', m: 'm', lv: 1, h: 'NHÀ CUNG CẤP VÀ TỒN KHO',
+            tw: () => ({k: rn(0, 1), g: rn(15, 35), m: rn(12, 30)}),
+            e: {t: 2, v: 2, p: 14},
+            st: [{
+                w: 'SHIPPER', g: 'ĐÀM PHÁN NHÀ CUNG CẤP', s: (S, T, L) => [`Giá ${L.c} sắp tăng ${T.g}%.`, 'Tôi giữ giá cũ nếu bạn cam kết đặt trước.'],
+                q: [{r: 'Đàm phán với nhà cung cấp thế nào?', o: [
+                    ['Đề xuất hợp đồng 6 tháng, trả theo mốc giao hàng', {c: -.1, b: -3}, 'Giữ được giá và không khóa quá nhiều tiền mặt.', 't:sup i'],
+                    ['Đặt trước toàn bộ và trả hết ngay', {c: -.6}, 'Giữ giá nhưng tiền mặt cạn nhanh.', 't:pre'],
+                    ['Từ chối, chờ giá giảm', {b: 4}, 'Chi phí tăng ngay từ tháng sau.', '']]}]
+            }, {
+                w: 'BÁN HÀNG', g: 'XỬ LÝ HÀNG TỒN', s: (S, T, L) => T.k ? [`Tồn ${L.s} nhiều hơn nhu cầu ${T.g}%.`, 'Vốn đang nằm chết trong kho.'] : [`${L.s} đang thiếu, khách chờ lâu và bắt đầu hủy đơn.`],
+                q: [{f: (S, T) => !T.k, r: 'Hàng đang thiếu. Bạn xử lý thế nào?', o: [
+                    ['Đặt gấp với phụ phí, ưu tiên khách lớn', {c: -.2}, 'Giữ được đơn quan trọng với chi phí cao hơn.', 't:rush'],
+                    ['Báo khách chờ và hẹn ngày giao rõ ràng', {t: 1, m: -1}, 'Vài khách hủy nhưng niềm tin được giữ.', 't:honest'],
+                    ['Hứa giao nhanh dù chưa có hàng', {cr: -4, t: -3}, 'Giao trễ, khiếu nại làm hỏng uy tín.', 'r:oth']]},
+                    {f: (S, T) => T.k, r: 'Tồn kho dư nhiều. Bạn xử lý thế nào?', o: [
+                    ['Giảm giá có kế hoạch để xả tồn, giữ biên tối thiểu', {c: .3}, 'Thu hồi tiền mặt, biên giảm nhẹ.', 't:clear'],
+                    ['Giữ nguyên chờ giá tốt hơn', {c: -.1}, 'Chi phí kho tăng, vốn bị kẹt.', ''],
+                    ['Ghi nhận tồn kho là doanh thu cho báo cáo đẹp', {v: 3}, 'Đẹp tạm thời nhưng là sai lệch nghiêm trọng.', 'r:fin']]}]
+            }, {
+                w: [30, 174, 'SẠP A'], g: 'KIỂM GIÁ VÀ BIÊN', s: (S, T) => [`Giá bán đang ở mức biên gộp khoảng ${T.m}%.`, 'Giá vốn vừa tăng nên biên mỏng hơn.'],
+                q: [{r: (S, T) => `Biên gộp ${T.m}% sau khi giá vốn tăng. Điều chỉnh gì?`, o: [
+                    ['Chỉnh giá theo nhóm khách và cắt hao hụt', {b: -4, p: 3}, 'Biên cải thiện nhờ giảm hao hụt và giá linh hoạt.', 't:margin i'],
+                    ['Giữ nguyên giá, chấp nhận biên thấp', {v: -2}, 'Biên mỏng làm định giá giảm.', ''],
+                    ['Tăng giá mạnh toàn bộ', {c: -.2, v: -1}, 'Khách rời đi, doanh thu giảm.', '']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'BÁO CÁO CHI PHÍ', s: () => ['Quỹ sẽ hỏi vì sao giá vốn tăng. Bạn chuẩn bị gì?'],
+                q: [{r: 'Giải thích giá vốn tăng với quỹ thế nào?', o: [
+                    ['Trình hợp đồng nhà cung cấp, bảng biên và phương án xử lý tồn', {t: 3, v: 2}, 'Quỹ thấy bạn kiểm soát được chi phí.', '', 'sup|rush|honest|clear', {t: -2}, 'Bạn chưa xử lý xong nên chỉ giải thích chung chung.'],
+                    ['Nói giá vốn sẽ tự ổn định', {t: -3}, 'Quỹ không chấp nhận lời hứa suông.', ''],
+                    ['Nói đã chuyển hết chi phí sang khách', {t: -2}, 'Quỹ hỏi lại tỷ lệ khách rời đi.', '']]}]
+            }]
+        }, {
+            id: 'm3', m: 'm', lv: 2, h: 'GẶP ĐỐI TÁC VÀ QUỸ TẠI CHỢ',
+            tw: () => ({k: rn(0, 1), w: rn(15, 40)}),
+            e: {t: 3, v: 4, p: 18},
+            st: [{
+                w: 'DOANH NHÂN', g: 'NHẬN LỜI MỜI GẶP QUỸ', s: (S) => ['Một quỹ nhỏ đang đi xem doanh nghiệp thật ở chợ.', `Họ quan tâm ${S.prod}. Bạn chuẩn bị gì?`],
+                q: [{r: 'Chuẩn bị cho buổi gặp quỹ?', o: [
+                    ['Gom số liệu đã kiểm chứng từ nhà máy và chợ', {p: 3}, 'Bạn có bộ số liệu gọn để trình bày.', 't:pack i'],
+                    ['Chỉ mang bài thuyết trình đẹp', {t: -1}, 'Đẹp nhưng thiếu số liệu thật.', '']]}]
+            }, {
+                w: 'BẾP TRƯỞNG', g: 'GẶP ĐỐI TÁC LỚN', s: (S, T) => [`Tôi muốn nhập ${S.prod} lâu dài, nhưng đòi độc quyền khu vực.`, `Đổi lại đơn hàng tăng ${T.w}%.`],
+                q: [{r: 'Phản hồi đề nghị độc quyền?', o: [
+                    ['Đồng ý độc quyền có thời hạn, mốc doanh số và quyền rút lui', {t: 3, v: 3}, 'Đơn hàng ổn định hơn mà không bị khóa chặt.', 't:deal i'],
+                    ['Từ chối thẳng', {v: -1}, 'Mất cơ hội tăng trưởng lớn.', ''],
+                    ['Đồng ý độc quyền vô thời hạn', {v: 2, t: -2}, 'Quỹ sẽ lo ngại rủi ro phụ thuộc một khách.', 'r:law']]}]
+            }, {
+                w: [250, 172, 'SẠP B'], g: 'XỬ LÝ SỰ CỐ BÁN HÀNG', s: (S, T) => [T.k ? 'Hàng giao đến sạp bị trễ, khách xếp hàng dài.' : 'Máy thanh toán lỗi, khách bỏ về.', 'Quỹ đang đứng quan sát gần đó.'],
+                q: [{r: 'Xử lý ngay trước mặt quỹ thế nào?', o: [
+                    ['Xin lỗi khách, hỗ trợ tận nơi và ghi lại nguyên nhân', {t: 2, c: -.05}, 'Quỹ thấy cách bạn xử lý khủng hoảng.', 't:crisis i'],
+                    ['Nhờ nhân viên xử lý, mình tiếp quỹ', {t: -1}, 'Khách phàn nàn, quỹ thấy rõ.', ''],
+                    ['Đổ lỗi cho đối tác', {t: -3}, 'Quỹ thấy thiếu trách nhiệm.', 'r:oth']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'TRÌNH BÀY VỚI QUỸ', s: () => ['Quỹ muốn nghe tóm tắt ngay tại chợ.'],
+                q: [{r: 'Quỹ hỏi: nhu cầu khách và giá có vững không?', o: [
+                    ['Trình bảng khách, giá và so sánh đối thủ', {t: 4, v: 3}, 'Quỹ thấy số liệu thị trường rõ ràng.', '', 'why|comp|margin', {t: -2}, 'Bạn chưa có số liệu thị trường nên trả lời chung chung.'],
+                    ['Nói thị trường rất lớn, ai cũng cần', {t: -3}, 'Quỹ không tin lời nói không số liệu.', '']]},
+                    {r: 'Quỹ hỏi về chất lượng vận hành và số liệu nhà máy?', o: [
+                    ['Trình số liệu kho, hồ sơ và công suất đã kiểm chứng', {t: 4, v: 3}, 'Quỹ thấy chuỗi từ nhà máy đến chợ khớp nhau.', '', 'inv|doc|fixbook|cap|rca', {t: -2}, 'Bạn chưa có số liệu vận hành đã kiểm chứng.'],
+                    ['Nói nhà máy lo, tôi chỉ lo bán', {t: -3}, 'Quỹ cho rằng bạn thiếu kiểm soát vận hành.', '']]}]
+            }]
+        }, {
+            id: 'f5', m: 'f', lv: 0, h: 'ĐỐI CHIẾU ĐƠN HÀNG VÀ SẢN LƯỢNG',
+            tw: () => ({a: rn(900, 1400), b: rn(12, 30), k: rn(0, 2), d: rn(30, 60)}),
+            e: {t: 2, v: 2, p: 10},
+            st: [{
+                w: 'QUẢN LÝ', g: 'XEM SỔ ĐƠN HÀNG', s: (S, T, L) => [`Tháng này xưởng làm ${T.a} ${L.o}, nhưng đơn xuất thiếu khoảng ${T.b}%.`, 'Quỹ sẽ hỏi con số nào là bán thật.'],
+                q: [{r: 'Bạn đối chiếu sản lượng và đơn bán thế nào?', o: [
+                    ['Đối chiếu từng lô với đơn hàng và phiếu xuất kho', {c: -.05, p: 3}, 'Lô và đơn khớp từng dòng, phần chênh có lý do.', 't:ord i'],
+                    ['Lấy sản lượng làm số bán', {}, 'Số đẹp nhưng sản lượng không phải doanh thu.', 'r:fin'],
+                    ['Hỏi miệng quản lý cho nhanh', {m: -1}, 'Không có chứng từ để đưa quỹ.', '']]}]
+            }, {
+                w: [200, 176, 'SỔ SẢN LƯỢNG'], g: 'TÌM NGUYÊN NHÂN CHÊNH LỆCH', s: (S, T) => [`Lật sổ ca, bạn thấy phần chênh là ${['sản phẩm lỗi chờ làm lại', 'đơn đã hủy chưa cập nhật', 'hàng đã giao nhưng chưa xuất hóa đơn'][T.k]}.`],
+                q: [{r: 'Phát hiện này xử lý thế nào?', o: [
+                    ['Ghi đúng bản chất, lập biên bản và kế hoạch xử lý', {c: -.05, p: 3}, 'Chênh lệch có giải thích rõ, hồ sơ sạch.', 't:found i'],
+                    ['Gộp vào tồn kho cho khớp số', {}, 'Khớp số nhưng che mất nguyên nhân thật.', 'r:fin'],
+                    ['Xóa dòng chênh khỏi sổ', {cr: -3}, 'Sửa số liệu là rủi ro rất lớn khi thẩm định.', 'r:law']]}]
+            }, {
+                w: 'KỸ SƯ', g: 'HỎI HIỆU SUẤT SẢN XUẤT', s: () => ['Máy chạy thực tế thấp hơn kế hoạch vì chờ nguyên liệu và đổi lô.'],
+                q: [{r: 'Quỹ hay hỏi hiệu suất. Bạn báo con số nào?', o: [
+                    ['Hiệu suất thực tế kèm nguyên nhân dừng và cách cải thiện', {t: 1, p: 3}, 'Con số thật, kế hoạch cải thiện rõ.', 't:eff i'],
+                    ['Công suất thiết kế cho đẹp', {t: -1}, 'Số đẹp nhưng nhật ký máy sẽ nói khác.', 'r:oth']]}]
+            }, {
+                w: 'VĂN PHÒNG', g: 'KIỂM CÔNG NỢ KHÁCH', s: (S, T) => [`Có khách trả chậm khoảng ${T.d} ngày so với hợp đồng.`, 'Doanh thu đã ghi nhưng tiền chưa về.'],
+                q: [{r: 'Xử lý công nợ chậm thế nào?', o: [
+                    ['Lập bảng tuổi nợ, nhắc khách lớn, đòi cọc cho đơn sau', {c: .15, p: 3}, 'Một phần tiền về, đơn sau có cọc.', 't:ar i'],
+                    ['Ghi là đã thu cho báo cáo đẹp', {v: 3}, 'Đẹp tạm thời nhưng tiền thật chưa về.', 'r:fin'],
+                    ['Để đó, khách nào cũng trả chậm', {c: -.1}, 'Tiền mặt bị kẹt lâu hơn.', '']]}]
+            }, {
+                w: 'CHUYÊN GIA KIỂM TRA', g: 'TRẢ LỜI KIỂM TOÁN', s: () => ['Cho tôi xem đơn hàng đi tới tiền thật như thế nào.'],
+                q: [{r: 'Sản lượng, đơn bán và tiền thu có khớp nhau không?', o: [
+                    ['Trình đối chiếu lô-đơn-hóa đơn và nguyên nhân chênh lệch', {t: 4, v: 2}, 'Chuỗi từ sản xuất tới tiền khớp, kiểm toán ghi nhận tốt.', '', 'ord|found', {t: -2}, 'Bạn thiếu đối chiếu nên trả lời chung chung.'],
+                    ['Sản lượng cao nghĩa là bán tốt', {t: -4}, 'Kiểm toán không chấp nhận suy luận đó.', 'r:fin']]},
+                    {f: () => !X.tg.ar, r: 'Công nợ khách chưa được rà soát. Bạn giải thích?', o: [
+                    ['Nhận chưa rà, hẹn ngày hoàn tất và người phụ trách', {t: -1}, 'Trung thực nhưng bị ghi nhận là việc còn treo.', 'r:oth'],
+                    ['Nói khách chắc chắn trả', {t: -3}, 'Kiểm toán yêu cầu bằng chứng, không phải lời hứa.', 'r:fin']]}]
+            }]
+        }, {
+            id: 'f6', m: 'f', lv: 1, h: 'ĐƠN GẤP VÀ BÀI TOÁN DÒNG TIỀN',
+            tw: () => ({q: rn(20, 45), d: rn(45, 75), k: rn(0, 1)}),
+            e: {t: 2, v: 2, p: 14},
+            st: [{
+                w: 'QUẢN LÝ', g: 'NHẬN ĐƠN GẤP', s: (S, T, L) => [`${['Khách mới rất lớn', 'Khách cũ lớn'][T.k]} đặt thêm ${T.q}% ${L.o}, hạn giao gấp, thanh toán sau ${T.d} ngày.`, 'Nhận hay không là quyết định của sếp.'],
+                q: [{r: 'Quyết định về đơn gấp?', o: [
+                    ['Nhận có điều kiện: cọc 30%, giao theo đợt', {t: 1, p: 3}, 'Giữ được khách mà dòng tiền an toàn hơn.', 't:cond i'],
+                    ['Nhận hết, giao đúng hạn bằng mọi giá', {c: -.3, m: -3}, 'Đơn lớn nhưng cạn tiền, nhân sự kiệt sức.', 't:rush'],
+                    ['Từ chối đơn', {v: -1}, 'An toàn nhưng mất cơ hội tăng trưởng.', '']]}]
+            }, {
+                w: 'NHÂN SỰ', g: 'XẾP CA VÀ NHÂN LỰC', s: () => ['Muốn kịp hạn phải tăng ca, nhưng công nhân đã mệt.'],
+                q: [{r: 'Bố trí nhân lực thế nào?', o: [
+                    ['Thuê ca thời vụ, trả phụ cấp rõ ràng', {c: -.15, m: 2}, 'Đủ người, chi phí tăng nhưng kiểm soát được.', 't:staff2 i'],
+                    ['Ép tăng ca không báo trước', {m: -5, cr: -2}, 'Công nhân bất mãn, nguy cơ tai nạn lao động.', 'r:law']]}]
+            }, {
+                w: [300, 176, 'CỔNG XUẤT HÀNG'], g: 'KIỂM LÔ XUẤT ĐẦU TIÊN', s: (S, T) => [`Bạn kiểm lô đầu và thấy ${['nhãn ghi sai quy cách', 'thiếu chứng từ giao nhận'][T.k]}.`],
+                q: [{r: 'Xử lý lô này?', o: [
+                    ['Dừng xuất, sửa, ghi lại và báo khách', {c: -.05, t: 1}, 'Trễ vài giờ nhưng khách tin vì được báo trước.', 't:qc i'],
+                    ['Xuất luôn, sửa sau', {cr: -3}, 'Khách nhận hàng sai, khiếu nại tăng.', 'r:oth']]}]
+            }, {
+                w: 'VĂN PHÒNG', g: 'RÀ HỢP ĐỒNG VÀ CÔNG NỢ', s: (S, T) => [`Hợp đồng ghi trả sau ${T.d} ngày, không có phạt trễ hạn.`],
+                q: [{r: 'Điều chỉnh hợp đồng thế nào?', o: [
+                    ['Thêm phạt trễ hạn, cọc và mốc thanh toán', {t: 1, p: 3}, 'Rủi ro công nợ giảm, hợp đồng rõ ràng.', 't:term i'],
+                    ['Giữ nguyên để không làm khó khách', {}, 'Quỹ sẽ hỏi ai bảo vệ dòng tiền của công ty.', 'r:law']]}]
+            }, {
+                w: 'NHÀ ĐẦU TƯ THĂM NHÀ MÁY', g: 'GIẢI TRÌNH ĐƠN LỚN', s: () => ['Đơn lớn này rất đẹp. Tiền thật khi nào về?'],
+                q: [{r: 'Đơn lớn tăng doanh thu, nhưng dòng tiền thế nào?', o: [
+                    ['Trình điều kiện cọc, mốc thanh toán và dự báo dòng tiền', {t: 5, v: 3}, 'Quỹ thấy bạn quản được vốn lưu động.', '', 'cond|term', {t: -3}, 'Bạn chưa chốt điều kiện nên chỉ trả lời chung.'],
+                    ['Khách lớn thì chắc chắn trả', {t: -4}, 'Quỹ không tin sự chắc chắn tuyệt đối.', 'r:fin']]},
+                    {f: () => X.tg.rush, r: 'Quỹ thấy công nhân tăng ca nhiều. Bạn giải thích?', o: [
+                    ['Nêu chi phí nhân sự và kế hoạch thuê thời vụ', {t: 2}, 'Quỹ thấy rủi ro nhân sự được quản lý.', '', 'staff2', {t: -3, cr: -2}, 'Bạn chưa có phương án nhân lực, quỹ lo ngại.'],
+                    ['Nói công nhân tự nguyện', {t: -3}, 'Quỹ đã nghe công nhân kể khác.', 'r:law']]}]
+            }]
+        }, {
+            id: 'f7', m: 'f', lv: 2, h: 'GIÁ THÀNH VÀ HIỆU QUẢ TRƯỚC DUE DILIGENCE',
+            tw: () => ({k: rn(0, 2), m: rn(18, 35), w: rn(4, 12)}),
+            e: {t: 3, v: 4, p: 18},
+            st: [{
+                w: [30, 176, 'BẢNG GIÁ THÀNH'], g: 'RÀ SOÁT GIÁ THÀNH', s: (S, T) => [`Biên gộp thực tế còn ${T.m}%, chủ yếu vì ${['giá nguyên liệu tăng', 'hao hụt cao', 'chi phí tăng ca'][T.k]}.`, `Hao hụt ghi nhận ${T.w}%.`],
+                q: [{r: 'Bạn rà giá thành thế nào?', o: [
+                    ['Bóc giá thành theo sản phẩm, nguyên liệu, nhân công, hao hụt', {c: -.05, p: 3}, 'Bạn biết chính xác đồng nào chảy đi đâu.', 't:cost i'],
+                    ['Dùng giá thành năm ngoái', {}, 'Số cũ không phản ánh chi phí hiện tại.', 'r:fin'],
+                    ['Giảm hao hụt trong báo cáo cho đẹp', {v: 2}, 'Biên đẹp trên giấy, sai bản chất.', 'r:fin']]}]
+            }, {
+                w: 'KỸ SƯ', g: 'GIẢM HAO HỤT', s: (S, T) => [`Hao hụt ${T.w}% có thể giảm nếu đổi quy trình.`],
+                q: [{r: 'Xử lý hao hụt thế nào?', o: [
+                    ['Thử quy trình mới 2 tuần, đo hao hụt trước và sau', {c: -.2, p: 3}, 'Hao hụt giảm có số liệu chứng minh.', 't:waste i'],
+                    ['Mua máy mới ngay', {c: -.8, b: 4}, 'Tốn vốn, burn tăng khi chưa chứng minh hiệu quả.', 't:big2'],
+                    ['Nhắc công nhân làm cẩn thận hơn', {m: -2}, 'Không đổi gì về hệ thống, công nhân thấy bị đổ lỗi.', '']]}]
+            }, {
+                w: 'QUẢN LÝ', g: 'ĐÀM PHÁN NHÀ CUNG CẤP', s: (S, T, L) => [`Giá ${L.c} đang tăng. Nhà cung cấp muốn khóa ${rn(6, 12)} tháng.`],
+                q: [{r: 'Chọn cách đàm phán?', o: [
+                    ['Hợp đồng khung 12 tháng có điều khoản điều chỉnh giá', {t: 1, p: 3}, 'Giá ổn định, vẫn có đường lùi.', 't:frame i'],
+                    ['Dồn một nhà cung cấp để lấy chiết khấu', {c: .1}, 'Rẻ hơn nhưng phụ thuộc một nguồn.', 'r:oth'],
+                    ['Giữ như cũ', {b: 3}, 'Chi phí tiếp tục nhích lên.', '']]}]
+            }, {
+                w: 'CHUYÊN GIA KIỂM TRA', g: 'GIẢI TRÌNH GIÁ THÀNH', s: () => ['Cho tôi xem cách tính giá thành và biên gộp.'],
+                q: [{r: 'Bạn trình bày cách tính giá thành ra sao?', o: [
+                    ['Trình bảng giá thành, nguồn số liệu và phép tính lại', {t: 4, v: 2}, 'Kiểm toán tính lại và khớp số.', '', 'cost', {t: -3}, 'Bạn thiếu bảng giá thành nên không chứng minh được.'],
+                    ['Nói đã làm nhiều năm nên chắc đúng', {t: -4}, 'Kinh nghiệm không thay được số liệu.', 'r:fin']]}]
+            }, {
+                w: 'NHÀ ĐẦU TƯ THĂM NHÀ MÁY', g: 'TRẢ LỜI QUỸ VỀ BIÊN LỢI NHUẬN', s: () => ['Biên gộp mỏng thì mở rộng có thật sự có lợi không?'],
+                q: [{r: 'Bạn trả lời thế nào?', o: [
+                    ['Trình giá thành, hao hụt đã giảm và hợp đồng nguyên liệu', {t: 5, v: 4}, 'Quỹ thấy lộ trình cải thiện biên rõ ràng.', '', 'cost|waste|frame', {t: -3, v: -2}, 'Bạn chưa chứng minh được biên sẽ tốt lên.'],
+                    ['Mở rộng sẽ tự làm biên tốt lên', {t: -4}, 'Quỹ cần cơ chế cụ thể, không phải kỳ vọng.', '']]},
+                    {f: () => X.rk.length > 1, r: 'Hồ sơ còn vài vấn đề treo. Bạn xử lý thế nào?', o: [
+                    ['Lập danh sách vấn đề, người phụ trách, hạn xử lý', {t: 3}, 'Quỹ thấy bạn kiểm soát được rủi ro.', ''],
+                    ['Nói đó chỉ là chi tiết nhỏ', {t: -4, v: -3}, 'Quỹ cho rằng bạn xem nhẹ rủi ro.', 'r:fin']]}]
+            }]
+        }, {
+            id: 'm4', m: 'm', lv: 0, h: 'KIỂM TRA DOANH SỐ VÀ GIÁ BÁN',
+            tw: () => ({s: rn(10, 25), r: rn(5, 15), k: rn(0, 1)}),
+            e: {t: 2, v: 2, p: 10},
+            st: [{
+                w: 'BÁN HÀNG', g: 'HỎI DOANH SỐ', s: (S, T, L) => [`Báo cáo nói ${L.o} bán tăng ${T.s}% tháng này.`, 'Nhưng nhiều đơn là khuyến mãi giá rẻ.'],
+                q: [{r: 'Xác minh doanh số thế nào?', o: [
+                    ['Tách đơn theo giá bán, khuyến mãi và kênh', {p: 3}, 'Bạn thấy tăng trưởng thật nằm ở đâu.', 't:sales i'],
+                    ['Dùng tổng số đơn', {}, 'Số tổng che mất chất lượng doanh thu.', ''],
+                    ['Tin báo cáo của nhân viên', {t: -1}, 'Chưa kiểm chứng, quỹ sẽ hỏi lại.', '']]}]
+            }, {
+                w: [140, 176, 'SỔ BÁN HÀNG'], g: 'LẬT SỔ BÁN HÀNG', s: (S, T) => [`Khoảng ${T.r}% đơn bị ${['hoàn trả', 'giảm giá ngoài chính sách'][T.k]}.`],
+                q: [{r: 'Xử lý phần này trong báo cáo?', o: [
+                    ['Ghi rõ phần hoàn/giảm giá, tính doanh thu thuần', {c: -.05, p: 3}, 'Doanh thu thuần phản ánh thật hơn.', 't:net i'],
+                    ['Bỏ qua vì số nhỏ', {}, 'Số nhỏ nhưng lặp lại sẽ bị quỹ chú ý.', 'r:fin']]}]
+            }, {
+                w: 'KHÁCH', g: 'HỎI GIÁ KHÁCH CHẤP NHẬN', s: () => ['Em mua vì quen thương hiệu, đắt hơn chút em vẫn cân nhắc.'],
+                q: [{r: 'Bạn khai thác thông tin giá thế nào?', o: [
+                    ['Hỏi mức giá và lý do chọn, ghi lại', {m: 1}, 'Bạn có dữ liệu về độ nhạy giá.', 't:price i'],
+                    ['Tự đoán theo cảm tính', {}, 'Không có số liệu để bảo vệ mức giá.', '']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'BÁO CÁO DOANH NHÂN', s: () => ['Nói tôi nghe doanh số thật và giá bán của bạn.'],
+                q: [{r: 'Bạn trình bày doanh số và giá thế nào?', o: [
+                    ['Doanh thu thuần, cơ cấu khuyến mãi và độ nhạy giá', {t: 3, v: 3}, 'Đối tác thấy số liệu thị trường đáng tin.', '', 'sales|net|price', {t: -1}, 'Bạn thiếu số liệu kiểm chứng nên nói chung chung.'],
+                    ['Doanh số tăng mạnh, không cần chi tiết', {t: -3}, 'Đối tác không tin con số không có chi tiết.', 'r:fin']]}]
+            }]
+        }, {
+            id: 'm5', m: 'm', lv: 1, h: 'THU THẬP DỮ LIỆU CHO BUỔI GỌI VỐN',
+            tw: () => ({r: rn(20, 45), c: rn(15, 40), k: rn(0, 1)}),
+            e: {t: 2, v: 2, p: 14},
+            st: [{
+                w: 'DEV', g: 'KIỂM TRA DỮ LIỆU KHÁCH', s: (S, T) => [`Dữ liệu khách đang nằm ở ${['sổ tay riêng của nhân viên', 'ba file không đồng bộ'][T.k]}.`],
+                q: [{r: 'Xử lý dữ liệu thế nào?', o: [
+                    ['Gom về một bảng, xác minh trùng lặp', {c: -.05, p: 3}, 'Có một nguồn dữ liệu duy nhất.', 't:data i'],
+                    ['Chỉ lấy file đẹp nhất', {}, 'Số đẹp nhưng không đại diện.', 'r:fin']]}]
+            }, {
+                w: 'DU KHÁCH', g: 'HỎI KÊNH BIẾT ĐẾN', s: () => ['Em biết tới qua bạn bè, không phải quảng cáo.'],
+                q: [{r: 'Ghi nhận kênh khách như thế nào?', o: [
+                    ['Ghi kênh thật và so với chi phí marketing', {p: 3}, 'Bạn biết kênh nào hiệu quả thật.', 't:chan i'],
+                    ['Mặc định mọi khách đến từ quảng cáo', {v: 2}, 'Số đẹp nhưng sai nguồn.', 'r:oth']]}]
+            }, {
+                w: 'KHÁCH', g: 'HỎI KHÁCH QUAY LẠI', s: (S, T) => [`Em mua lần thứ ba rồi.`, `Khoảng ${T.r}% khách quay lại; chi phí kéo khách mới cao hơn kế hoạch ${T.c}%.`],
+                q: [{r: 'Báo cáo chỉ số khách thế nào?', o: [
+                    ['Tính tỷ lệ quay lại và chi phí kéo khách theo nhóm', {t: 1, p: 3}, 'Quỹ sẽ thấy chất lượng tăng trưởng.', 't:cohort i'],
+                    ['Chỉ báo số khách mới', {t: -1}, 'Bỏ sót chất lượng khách.', '']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'TRÌNH BÀY DỮ LIỆU', s: () => ['Cho tôi xem dữ liệu khách và chi phí kéo khách của bạn.'],
+                q: [{r: 'Bạn trình bày dữ liệu thế nào?', o: [
+                    ['Trình bảng khách, kênh và nhóm khách quay lại', {t: 4, v: 3}, 'Quỹ thấy dữ liệu rõ và có thể kiểm chứng.', '', 'data|chan|cohort', {t: -2}, 'Dữ liệu của bạn chưa được xác minh.'],
+                    ['Nói khách rất yêu thích sản phẩm', {t: -3}, 'Quỹ cần số liệu, không phải cảm nhận.', '']]},
+                    {f: () => X.rk.length > 0, r: 'Quỹ thấy có chỗ số liệu chưa khớp. Bạn nói gì?', o: [
+                    ['Nhận chỗ chưa khớp và nêu cách sửa', {t: 1}, 'Trung thực, quỹ ghi nhận.', ''],
+                    ['Chối là không có', {t: -4, cr: -2}, 'Quỹ có ghi chú riêng và mất niềm tin.', 'r:fin']]}]
+            }]
+        }, {
+            id: 'm6', m: 'm', lv: 2, h: 'KHÁCH LỚN VÀ CUỘC CHIẾN GIÁ',
+            tw: () => ({d: rn(8, 20), k: rn(0, 1), t: rn(30, 60)}),
+            e: {t: 3, v: 4, p: 18},
+            st: [{
+                w: 'THANH NIÊN', g: 'NGHE TIN ĐỐI THỦ', s: (S, T) => [`Nghe nói sạp B vừa hạ giá ${T.d}% để giành khách lớn.`, 'Có thể là tin thật, có thể là tin đồn.'],
+                q: [{r: 'Phản ứng với tin này?', o: [
+                    ['Kiểm chứng giá thật ở sạp B trước khi phản ứng', {p: 3}, 'Bạn có thông tin chính xác để quyết định.', 't:verify i'],
+                    ['Hạ giá ngay theo tin', {c: -.3, v: -2}, 'Phản ứng vội làm biên bị bào mòn.', 't:cut2'],
+                    ['Phớt lờ', {}, 'Bạn bỏ lỡ tín hiệu thị trường.', '']]}]
+            }, {
+                w: 'BẾP TRƯỞNG', g: 'ĐÀM PHÁN KHÁCH LỚN', s: (S, T) => [`Tôi đòi giảm ${T.d}% và thanh toán sau ${T.t} ngày nếu muốn đơn dài hạn.`],
+                q: [{r: 'Trả lời khách lớn thế nào?', o: [
+                    ['Đổi giảm giá lấy cam kết số lượng và thanh toán sớm hơn', {t: 3, v: 3}, 'Khách đồng ý hợp đồng cân bằng cả hai bên.', 't:swap i'],
+                    ['Đồng ý hết điều kiện', {v: 2, c: -.3}, 'Giữ được đơn nhưng biên và tiền mặt đều yếu đi.', 'r:fin'],
+                    ['Từ chối thẳng', {v: -2}, 'Khách chuyển sang đối thủ.', '']]}]
+            }, {
+                w: [320, 176, 'BẢNG GIÁ'], g: 'ĐIỀU CHỈNH BẢNG GIÁ', s: () => ['Bạn có thể chỉnh bảng giá trước khi chốt với khách.'],
+                q: [{r: 'Chọn cấu trúc giá?', o: [
+                    ['Bảng giá theo bậc số lượng và thời hạn thanh toán', {v: 2}, 'Khách lớn được ưu đãi mà khách nhỏ không bị ảnh hưởng.', 't:tier i'],
+                    ['Giữ một mức giá cho tất cả', {}, 'Đơn giản nhưng khó giữ khách lớn.', '']]}]
+            }, {
+                w: 'SHIPPER', g: 'LO GIAO HÀNG KHÁCH LỚN', s: () => ['Xe giao bị kẹt, đơn lớn có thể trễ.'],
+                q: [{r: 'Xử lý giao hàng thế nào?', o: [
+                    ['Báo khách sớm, đổi tuyến và ghi nguyên nhân', {t: 2, c: -.05}, 'Khách chấp nhận vì được báo trước.', 't:ship i'],
+                    ['Hứa vẫn giao đúng giờ', {cr: -3, t: -2}, 'Giao trễ, khách mất niềm tin.', 'r:oth']]}]
+            }, {
+                w: 'DOANH NHÂN', g: 'CHỐT VỚI QUỸ', s: () => ['Quỹ muốn nghe cách bạn xử lý khách lớn và cạnh tranh giá.'],
+                q: [{r: 'Quỹ hỏi về rủi ro phụ thuộc khách lớn và cuộc chiến giá?', o: [
+                    ['Trình hợp đồng, bảng giá bậc và dữ liệu đối thủ đã kiểm chứng', {t: 5, v: 4}, 'Quỹ thấy bạn bảo vệ được giá và dòng tiền.', '', 'swap|tier|verify', {t: -3}, 'Bạn chưa có phương án rõ nên chỉ trả lời chung.'],
+                    ['Khách lớn sẽ không bao giờ rời đi', {t: -4}, 'Quỹ coi đây là rủi ro tập trung khách.', 'r:fin']]},
+                    {f: () => X.tg.cut2, r: 'Quỹ thấy bạn hạ giá vội theo tin đồn. Giải thích?', o: [
+                    ['Nhận đã phản ứng vội và nêu điều chỉnh', {t: -1}, 'Quỹ ghi nhận tinh thần trách nhiệm.', ''],
+                    ['Nói đó là chiến lược từ đầu', {t: -3}, 'Quỹ thấy khác với diễn biến thực tế.', 'r:oth']]}]
+            }]
+        }],
+        /* ---------- ENGINE ---------- */
+        fx = e => {
+            const M = 1 + .25 * CO.r + .1 * (CH.n - 1), k = n => n < 0 ? n * M : n, o = {};
+            if (e.c) o.c = Math.round(k(e.c) * CO.burn * 100) / 100;
+            if (o.c < 0) o.c = Math.max(o.c, -CO.cash * .5);
+            if (e.cr) o.cr = Math.round(k(e.cr));
+            if (e.v) o.v = Math.round(k(e.v) * 10) / 10;
+            if (e.t) o.t = Math.round(k(e.t) * 10) / 10;
+            ['m', 'b', 'p'].forEach(q => e[q] && (o[q] = e[q]));
+            if (Object.keys(o).length) applyFx(o, (e.t || 0) + (e.v || 0) + (e.m || 0) + (e.cr || 0) >= 0)
+        },
+        tags = k => (k || '').split(' ').forEach(t => {
+            if (t === 'i') X.i++;
+            else if (t[0] === 'r') X.rk.push(t.slice(2));
+            else if (t[0] === 't') X.tg[t.slice(2)] = 1
+        }),
+        need = n => !n || n.split('|').some(t => X.tg[t]),
+        pick = k => {
+            const e = CHD.filter(c => c.m === k && c.lv <= CO.r && !X.used[c.id]);
+            if (!e.length) return null;
+            const L = Math.max(...e.map(c => c.lv)), c = _pk(e.filter(c => c.lv === L));
+            X.used[c.id] = 1;
+            return {c, i: 0, T: c.tw ? c.tw() : {}}
+        },
+        sync = () => {
+            if (X.r === CO.r && X.n === CH.n) return;
+            X.r = CO.r;
+            X.n = CH.n;
+            X.a = CO.r >= ROUNDS.length ? {} : {f: pick('f'), m: pick('m')};
+            const L = lx();
+            TALKS.chx = {
+                title: 'KHU CHỢ', topic: 'chx',
+                pages: [_pk([`Dạo này khách hỏi nhiều về ${ST.prod}.`, `Chợ đông nhưng ${L.c} cứ nhích lên.`, `Nghe nói có quỹ đang đi xem doanh nghiệp thật quanh đây.`])]
+            };
+            const m = MAPS.chuaBoc;
+            if (m && m.npcs) m.npcs.forEach(n => n.talk = n.talk || 'chx')
+        },
+        cur = () => {
+            sync();
+            const m = G.map, a = m && X.a[KM[m.key]];
+            if (!a || a.end) return null;
+            const s = a.c.st[a.i], n = typeof s.w === 'string' ? m.npcs.find(n => n.name === s.w) : null;
+            return {a, s, n, g: v(s.g, a)}
+        },
+        who = (s, n) => n ? n.name : s.w[2],
+        ask = (a, s, n, qi) => {
+            const qs = (s.q || []).filter(q => !q.f || q.f(ST, a.T)), q = qs[qi];
+            if (!q) return next(a);
+            const ix = sf(q.o.map((_, i) => i)), nm = who(s, n);
+            menu(nm, a.c.h, v(q.r, a), ix.map(i => v(q.o[i][0], a)), k => {
+                const o = q.o[ix[k]], ok = need(o[4]);
+                fx(ok ? o[1] : o[5] || o[1]);
+                tags(o[3]);
+                talk([[nm, 'KẾT QUẢ', [v(ok ? o[2] : o[6] || o[2], a)], n]], () => ask(a, s, n, qi + 1))
+            }, n)
+        },
+        next = a => {
+            if (++a.i < a.c.st.length) return;
+            a.end = 1;
+            fx(a.c.e || {});
+            CH.log.push('Thử thách ' + a.c.h + ': hoàn thành');
+            AU.sfx('win');
+            talk([['TỔNG KẾT', a.c.h, [`Đã xác minh ${X.i} thông tin cho buổi gặp quỹ, còn ${X.rk.length} vấn đề treo.`, X.rk.length ? 'Vấn đề còn treo có thể bị lộ khi thẩm định.' : 'Hồ sơ sạch hơn khi bạn gặp quỹ.']]])
+        },
+        go = o => talk([[who(o.s, o.n), o.a.c.h, v(o.s.s, o.a), o.n]], () => ask(o.a, o.s, o.n, 0));
+    /* ---------- MÓC VÀO HỆ THỐNG CÓ SẴN ---------- */
+    const _iu = InteractionManager.prototype.update, _ip = InteractionManager.prototype.press;
+    InteractionManager.prototype.update = function(G) {
+        _iu.call(this, G);
+        if (G.q || G.dlg.on || G.pan || G.seq) return;
+        const o = cur();
+        if (!o) return;
+        const p = G.player;
+        if (o.n) {
+            if (Math.hypot(o.n.x - p.x, (o.n.y - p.y) * 1.4) < CFG.nearR * 1.3) G.target = {n: o.n}
+        } else if (Math.abs(p.x - o.s.w[0]) < 14 && Math.abs(p.y - o.s.w[1]) < 10 && !(G.target && G.target.n)) G.target = {ch: 1}
+    };
+    InteractionManager.prototype.press = function(G) {
+        if (!G.q && !G.dlg.on && !G.seq && !G.pan && G.target) {
+            const o = cur();
+            if (o && (o.n ? G.target.n === o.n : G.target.ch)) return go(o)
+        }
+        _ip.call(this, G)
+    };
+    const _do = drawObjective;
+    drawObjective = function() {
+        _do();
+        if (G.q || G.dlg.on || G.pan || G.intro || G.fade > .05 || (G.map && G.map.office)) return;
+        const o = cur();
+        if (!o) return;
+        const t = ('THỬ THÁCH ' + (o.a.i + 1) + '/' + o.a.c.st.length + ': ' + o.g).toUpperCase(),
+            w = Math.min(250, tw(t) + 14), x = 6, y = CO.r < BKM.length ? 48 : 32;
+        R(x - 1, y - 1, w + 2, 14, '#5cd6ff');
+        R(x, y, w, 12, '#131a30');
+        text(t, x + 5, y + 3, '#a8e8ff')
+    };
+    const _dn = drawNav;
+    drawNav = function() {
+        _dn();
+        if (G.q || G.dlg.on || G.pan || G.fin || G.intro || G.fade > .05) return;
+        const o = cur();
+        if (!o) return;
+        const t = G.time, b = Math.round(Math.sin(t * 5) * 2), C = '#5cd6ff';
+        if (o.n) return arrow(Math.round(o.n.x - 3), Math.round(o.n.y - 50 + b), 'd', C);
+        const [x, y, l] = o.s.w, k = Math.round(Math.abs(Math.sin(t * 3)) * 2);
+        al(.5, () => {
+            R(x - 7, y - 1, 15, 1, C);
+            R(x - 5, y, 11, 1, C);
+            R(x - 5, y - 2, 11, 1, C)
+        });
+        R(x - 3, y - 9, 7, 7, '#c8883c');
+        R(x - 3, y - 9, 7, 1, '#e8b060');
+        px(x, y - 6, '#fff');
+        px(x, y - 4, '#fff');
+        arrow(x - 3, y - 20 + b, 'd', C);
+        textC(l, x, y - 30 - k, '#fff')
+    };
+    const _sc = setupChapter;
+    setupChapter = function() {
+        _sc.apply(this, arguments);
+        Object.assign(X, {r: -1, n: -1, a: {}, used: {}, tg: {}, i: 0, rk: []})
+    };
+    const _st = settle;
+    settle = function(k) {
+        const r = _st.apply(this, arguments);
+        X.i = 0;
+        X.rk = [];
+        return r
+    };
+    const _br = beginRound;
+    beginRound = function(k) {
+        const r = _br.apply(this, arguments), s = qstate(k);
+        if (s && s.nego) {
+            s.trust = cl(s.trust + Math.min(10, X.i * 2) - 4 * X.rk.length);
+            s.vm = (s.vm || 0) + Math.min(4, X.i) - 2 * Math.min(2, X.rk.length)
+        }
+        return r
+    };
+/* PATCH 2: SỰ KIỆN ĐỘNG TRONG DEAL (DL). Chèn khối này trong IIFE CHX, NGAY TRƯỚC dòng:
+     return {rk: t => X.rk.filter(r => r === t).length, CHD, cur, X}
+   và sửa dòng đó thành:
+     return {rk: t => X.rk.filter(r => r === t).length, CHD, cur, X, DLD, DL}
+
+   Thêm sự kiện = thêm 1 object vào DLD:
+   {id, ty:nhóm, lv:0-2, st:[giai đoạn 'mid'|'pre'|'dd'|'ic'], who:'TÊN'|'INV', h:tiêu đề,
+    w:(c)=>trọng số, rq:(c)=>điều kiện cứng, ind:[ngành], hid:1 ẩn, opt:1 tùy chọn, fu:1 chỉ làm hậu quả,
+    sm:1 cho phép chạy ngay cùng giai đoạn, tw:()=>biến ngẫu nhiên T, i:(S,T,L)=>lời mở,
+    p:[{f:(S,T,g)=>có/không, r:câu hỏi, o:[[lựa chọn, hiệu ứng, phản hồi, tag, cần-tag, hiệu ứng-nếu-thiếu, phản hồi-nếu-thiếu]]}]}
+   Hiệu ứng: t=tin tưởng deal, v=định giá %, a=vốn % (sau đàm phán), h=sáng lập mất % cap table (sau đàm phán),
+             c=tiền (đơn vị tháng burn), cr=tín dụng, m=tinh thần, b=burn %, p=điểm.
+   Tag: 'd:x' tag riêng deal, 't:x' nhớ cả chương, 'x:x' xóa tag chương, 'r:fin|law|oth' rủi ro cho DD (ở 'ic' = -3 tin tưởng),
+        'f:id' xếp sự kiện hậu quả cho giai đoạn sau. Tag của thử thách nhà máy/chợ (X.tg) cũng được đọc ở đây. */
+const ORD = ['mid', 'pre', 'dd', 'ic'], PL = [[0, 1, 0, 1], [1, 1, 1, 1], [1, 2, 2, 2]],
+    PH = ['food', 'ecom', 'health'], DL = {q: [], done: {}, st: ''}, BY = {},
+    DLD = [{
+        id: 'vis', ty: 'ops', lv: 0, st: ['mid', 'pre'], who: 'INV', h: 'QUỸ ĐÒI ĐẾN XEM TẬN NƠI',
+        i: (S, T, L) => [`Tôi muốn xem ${S.prod} được vận hành thật.`, `Ngày mai tôi ghé ${L.l}, được chứ?`],
+        p: [{r: 'Quỹ muốn kiểm tra thực tế. Phản hồi?', o: [
+            ['Mời ngay và lên kế hoạch đón', {c: -.1, t: 2}, 'Bạn giao việc cho quản đốc và chuẩn bị số liệu.', 'd:host'],
+            ['Xin dời vài ngày để chuẩn bị kỹ', {t: -1}, 'Quỹ đồng ý nhưng ghi nhận bạn chưa sẵn sàng.', 'd:host'],
+            ['Từ chối vì bận gọi vốn', {t: -6}, 'Quỹ nghĩ bạn có điều che giấu.', 'r:oth']]},
+            {f: (S, T, g) => g.host, r: 'Quỹ đi một vòng và hỏi sâu về vận hành. Bạn dựa vào gì để trả lời?', o: [
+            ['Kết quả đã tự kiểm tra: kho, máy móc, hồ sơ', {t: 5, v: 3}, 'Thực tế khớp với báo cáo. Quỹ rất hài lòng.', '', 'plan|inv|fixed|logged|doc', {t: -2}, 'Bạn chưa kiểm tra kỹ nên trả lời chung chung.'],
+            ['Chỉ cho xem khu đẹp nhất', {t: -4}, 'Quỹ tự đi vào khu bạn né và thấy ngay vấn đề.', 'r:oth'],
+            ['Nhờ quản lý trả lời thay', {t: 1, m: -1}, 'Ổn, nhưng quỹ muốn nghe người đứng đầu.', '']]}]
+    }, {
+        id: 'val', ty: 'fin', lv: 0, st: ['mid', 'ic'], who: 'INV', h: 'QUỸ CHẤT VẤN ĐỊNH GIÁ', w: c => c.ik === 'gr' ? 2 : 1,
+        i: S => [`Vpre ${S.name} đưa ra cao hơn mặt bằng ngành.`, 'Hãy bảo vệ con số này.'],
+        p: [{r: 'Biện luận định giá thế nào?', o: [
+            ['Giao dịch tương đương, tăng trưởng và biên thực tế', {t: 3, v: 2}, 'Quỹ thấy con số có cơ sở.', '', 'sales|net|comp|cost|cap', {t: -2, v: -3}, 'Bạn thiếu số liệu so sánh nên bị ép giá.'],
+            ['Nói định giá phản ánh tiềm năng', {t: -3, v: -2}, 'Quỹ cần số liệu, không cần lời hứa.', ''],
+            ['Chấp nhận giảm ngay 8%', {t: 2, v: -8}, 'Quỹ hài lòng nhưng bạn nhượng quá sớm.', '']]}]
+    }, {
+        id: 'res', ty: 'hr', lv: 0, st: ['mid', 'pre'], who: 'NHÂN SỰ', h: 'NHÂN SỰ CHỦ CHỐT XIN NGHỈ',
+        i: () => ['Một thành viên chủ chốt vừa nộp đơn nghỉ.', 'Quỹ sẽ hỏi về độ ổn định của đội ngũ.'],
+        p: [{r: 'Xử lý thế nào?', o: [
+            ['Gặp riêng, tìm nguyên nhân thật', {c: -.1, m: 2}, 'Người này nói mình thấy không công bằng về cổ phần.', 'f:ret'],
+            ['Chấp nhận và tuyển thay', {m: -3, c: -.05}, 'Đội ngũ bàng hoàng, khách hỏi vì sao.', ''],
+            ['Hứa thưởng lớn bằng miệng', {m: 1, c: -.2, t: -1}, 'Lời hứa không có văn bản là rủi ro pháp lý.', 'r:law']]}]
+    }, {
+        id: 'ret', ty: 'hr', lv: 1, st: ['pre', 'dd'], who: 'NHÂN SỰ', h: 'ĐÒI GÓI GIỮ CHÂN', fu: 1,
+        i: () => ['Người chủ chốt đề nghị ở lại nếu có gói giữ chân rõ ràng.'],
+        p: [{r: 'Gói giữ chân thế nào?', o: [
+            ['ESOP có vesting 4 năm, ghi vào cap table', {t: 2, m: 3}, 'Giữ được người, cap table minh bạch.', 'd:esop'],
+            ['Tăng lương gấp đôi', {c: -.3, b: 5}, 'Giữ người nhưng burn tăng.', ''],
+            ['Từ chối', {m: -6, t: -2}, 'Người này rời đi, nhân sự khác hoang mang.', 'r:oth']]}]
+    }, {
+        id: 'cmp', ty: 'mkt', lv: 0, st: ['mid', 'pre'], who: 'KHÁCH HÀNG', h: 'KHÁCH PHÀN NÀN CÔNG KHAI',
+        i: (S, T, L) => [`Một khách lớn đăng phàn nàn công khai về ${L.o} của công ty.`, 'Có phóng viên đang hỏi thêm.'],
+        p: [{r: 'Bạn phản ứng ra sao?', o: [
+            ['Gọi khách, xin lỗi, đền bù và sửa lỗi gốc', {c: -.15, t: 2, cr: 2}, 'Khách rút bài viết và nhận lại hợp đồng.', 'd:fix'],
+            ['Đăng bài phản bác công khai', {t: -3, cr: -3}, 'Tranh cãi lan rộng hơn.', ''],
+            ['Phớt lờ', {t: -4, cr: -4}, 'Quỹ đọc được bài viết trước khi bạn kịp giải thích.', 'r:oth']]},
+            {f: (S, T, g) => g.fix, r: 'Quỹ hỏi cách bạn ngăn việc này lặp lại.', o: [
+            ['Trình quy trình xử lý khiếu nại và chỉ số hài lòng', {t: 3}, 'Quỹ thấy bạn học được từ sự cố.', '', 'cond|qc|why|data', {t: 1}, 'Bạn mới có cam kết miệng, quỹ ghi nhận.'],
+            ['Nói đây chỉ là trường hợp cá biệt', {t: -2}, 'Quỹ thấy bạn xem nhẹ vấn đề.', '']]}]
+    }, {
+        id: 'cpt', ty: 'mkt', lv: 1, st: ['mid', 'pre'], who: 'INV', h: 'ĐỐI THỦ RA SẢN PHẨM TƯƠNG TỰ', w: c => c.tg.comp ? .6 : 1.5,
+        i: () => ['Đối thủ vừa ra sản phẩm tương tự, giá thấp hơn, truyền thông rầm rộ.', 'Bạn ứng phó thế nào?'],
+        p: [{r: 'Quỹ muốn nghe chiến lược phản ứng.', o: [
+            ['Chỉ ra điểm khác biệt, giữ giá, bảo vệ khách hiện có', {t: 3, v: 2}, 'Quỹ thấy bạn hiểu thị trường.', '', 'why|comp|tier|verify', {t: -1}, 'Bạn thiếu số liệu so sánh nên nói chung chung.'],
+            ['Giảm giá ngay', {t: -2, v: -3, c: -.2}, 'Biên bị bào mòn.', 't:cut'],
+            ['Nói họ sao chép nên không đáng lo', {t: -4}, 'Quỹ không tin sự chủ quan.', '']]}]
+    }, {
+        id: 'doc', ty: 'doc', lv: 0, st: ['pre', 'dd'], who: 'INV', h: 'QUỸ ĐÒI THÊM HỒ SƠ', w: c => c.tg.doc ? .3 : 1.6,
+        tw: () => ({d: _pk(['hợp đồng chính với khách lớn', 'hóa đơn nguyên liệu quý trước', 'biên bản góp vốn', 'giấy phép bổ sung'])}),
+        i: (S, T) => [`Quỹ cần bổ sung ${T.d} trong 24 giờ.`, 'Thiếu hồ sơ sẽ làm chậm toàn bộ thẩm định.'],
+        p: [{r: (S, T) => `Không thấy ${T.d} ở data room. Tìm thế nào?`, o: [
+            ['Rà lại kho hồ sơ và hỏi kế toán tìm bản gốc', {c: -.05, p: 2}, 'Tìm được bản gốc và cập nhật data room.', 't:doc'],
+            ['Xin đối tác cấp lại, ghi rõ ngày bổ sung', {c: -.1, t: 1}, 'Có bản cấp lại, hồ sơ có dấu vết.', 't:doc'],
+            ['Làm lại bản mới cho kịp hạn', {}, 'Có giấy nhưng rủi ro pháp lý nghiêm trọng.', 'r:law']]}]
+    }, {
+        id: 'inv1', ty: 'ops', lv: 1, st: ['pre', 'dd'], who: 'KẾ TOÁN', h: 'TỒN KHO LỆCH SỔ KẾ TOÁN', hid: 1,
+        w: c => (c.tg.inv ? .3 : 2) * (c.phys ? 1.5 : .8), tw: () => ({g: rn(8, 25), k: rn(0, 2)}),
+        i: (S, T, L) => [`Số ${L.s} thực tế lệch ${T.g}% so với sổ kế toán.`, 'Quỹ chắc chắn sẽ đối chiếu.'],
+        p: [{r: 'Bạn làm gì đầu tiên?', o: [
+            ['Tự xuống kho đối chiếu từng lô', {c: -.1, p: 3}, 'Bạn lần ra điểm lệch nằm ở một đợt nhập hàng.', 'd:probe'],
+            ['Bảo kế toán điều chỉnh cho khớp', {}, 'Khớp số nhưng không có chứng từ.', 'r:fin'],
+            ['Chờ quỹ hỏi mới xử lý', {t: -2}, 'Quỹ sẽ tự phát hiện khi đối chiếu.', 'r:fin']]},
+            {f: (S, T, g) => g.probe, r: (S, T) => ['Nhà cung cấp giao thiếu nhưng vẫn xuất hóa đơn đủ.', 'Hao hụt chưa ghi nhận.', 'Hàng trả chưa nhập lại.'][T.k] + ' Xử lý?', o: [
+            ['Lập biên bản, điều chỉnh sổ có chứng từ', {c: -.05, t: 2, p: 3}, 'Hồ sơ sạch, có bằng chứng.', (S, T) => 't:ord d:fixrec' + (T.k ? '' : ' f:sup'), 'early', {t: 0}, 'Điều chỉnh xong nhưng quỹ hỏi vì sao bạn chưa phát hiện sớm.'],
+            ['Chỉ ghi chú nội bộ', {}, 'Vẫn chưa có chứng từ chính thức.', 'r:fin']]}]
+    }, {
+        id: 'sup', ty: 'ops', lv: 1, st: ['pre', 'dd'], who: 'NHÀ CUNG CẤP', h: 'NHÀ CUNG CẤP ĐỔI GIÁ VÀ HẠN TRẢ',
+        w: c => c.d.probe ? 4 : c.tg.sup ? .4 : 1, tw: () => ({g: rn(10, 25), d: rn(7, 15)}),
+        i: (S, T, L) => [`${L.c} tăng ${T.g}%, hạn thanh toán rút xuống ${T.d} ngày.`],
+        p: [{r: 'Đàm phán thế nào?', o: [
+            ['Hợp đồng khung có giá trần, trả theo mốc giao', {t: 2, c: -.05}, 'Giữ giá ổn định và dòng tiền an toàn.', 't:sup d:fixrec f:rev', 'sup|frame|ar', {c: -.2}, 'Bạn thiếu vị thế nên phải nhượng nhiều hơn.'],
+            ['Chấp nhận để giữ nguồn hàng', {b: 4, c: -.15}, 'Chi phí tăng ngay tháng sau.', ''],
+            ['Tìm nhà cung cấp khác', {c: -.2, m: -1}, 'Mất thời gian, chất lượng chưa ổn định.', '']]}]
+    }, {
+        id: 'rev', ty: 'fin', lv: 1, st: ['dd', 'ic'], who: 'INV', h: 'QUỸ XEM LẠI PHẦN SỬA SỐ LIỆU', fu: 1,
+        i: () => ['Tôi đã đọc phần bạn sửa sổ và làm việc với nhà cung cấp.'],
+        p: [{r: 'Quỹ hỏi: sai lệch đã được khắc phục triệt để chưa?', o: [
+            ['Trình biên bản, hợp đồng bổ sung và số liệu mới', {t: 4, v: 2}, 'Quỹ xác nhận vấn đề được xử lý tận gốc.', '', 'ord|sup', {t: -2}, 'Hồ sơ chưa đủ để quỹ xác nhận.'],
+            ['Nói đã xong, không cần xem lại', {t: -3}, 'Quỹ ghi chú bạn thiếu bằng chứng.', 'r:fin']]}]
+    }, {
+        id: 'aud', ty: 'fin', lv: 1, st: ['dd'], who: 'KPMG', h: 'KIỂM TOÁN PHÁT HIỆN SAI LỆCH',
+        w: c => (c.prep.audit ? .4 : 1.6) * (c.tg.cogs || c.tg.net ? .6 : 1), tw: () => ({k: rn(0, 2), m: rn(5, 20)}),
+        i: (S, T) => [`KPMG thấy ${['doanh thu ghi trước khi giao', 'chi phí chưa ghi nhận', 'khoản phải thu quá hạn chưa lập dự phòng'][T.k]}.`, `Ảnh hưởng khoảng ${T.m}% lợi nhuận kỳ này.`],
+        p: [{r: 'Phản ứng với kiểm toán?', o: [
+            ['Nhận sai sót, điều chỉnh sổ và giải trình', {t: 2, v: -2, p: 3}, 'Kiểm toán ghi nhận sự trung thực.', ''],
+            ['Tranh luận cách ghi nhận', {t: -3}, 'Kiểm toán mở rộng phạm vi kiểm tra.', 'r:fin'],
+            ['Nhờ kế toán sửa âm thầm', {t: -6, cr: -3}, 'Kiểm toán thấy dấu vết sửa sổ.', 'r:fin']]}]
+    }, {
+        id: 'cap', ty: 'ops', lv: 1, st: ['dd'], who: 'KỸ SƯ', h: 'CÔNG SUẤT THẤP HƠN BÁO CÁO', w: c => c.tg.cap ? .3 : 1.6,
+        tw: () => ({u: rn(60, 80)}),
+        i: (S, T, L) => [`Đo thực tế: ${L.l} chỉ đạt ${T.u}% so với con số trong hồ sơ.`],
+        p: [{r: 'Giải thích với quỹ thế nào?', o: [
+            ['Nhận số thật, trình kế hoạch và mốc cải thiện', {t: 2, v: -3, p: 3}, 'Quỹ chấp nhận vì bạn minh bạch.', 't:cap'],
+            ['Giữ số cũ, nói số đo là bất thường', {t: -5, v: -2}, 'Nhật ký vận hành chứng minh ngược lại.', 'r:oth'],
+            ['Xin hai tuần cải thiện rồi đo lại', {c: -.15, t: 1}, 'Quỹ đồng ý với điều kiện đo lại độc lập.', '']]}]
+    }, {
+        id: 'ar', ty: 'fin', lv: 0, st: ['pre', 'dd'], who: 'KHÁCH HÀNG', h: 'KHÁCH LỚN TRẢ TIỀN TRỄ', tw: () => ({d: rn(30, 60)}),
+        i: (S, T) => [`Khách lớn nhất báo thanh toán trễ ${T.d} ngày.`, 'Khoản này gần một phần ba doanh thu quý.'],
+        p: [{r: 'Xử lý khoản phải thu?', o: [
+            ['Chốt lịch trả có phạt chậm, yêu cầu cọc đơn sau', {c: 1, t: 1}, 'Một phần tiền về sớm, đơn sau có cọc.', 't:ar'],
+            ['Vay ngắn hạn bù tạm', {c: 2, cr: -4, b: 3}, 'Có tiền ngay nhưng thêm nợ.', 'f:run'],
+            ['Không ghi vào báo cáo', {t: -5}, 'Quỹ thấy công nợ không khớp.', 'r:fin']]}]
+    }, {
+        id: 'run', ty: 'fin', lv: 1, st: ['pre', 'ic'], who: 'CFO', h: 'RUNWAY NGẮN HƠN DỰ KIẾN', w: c => c.rw < 7 ? 4 : c.rw < 10 ? 1.5 : .3,
+        i: () => [`CFO báo runway còn ${rwy()} tháng, ngắn hơn kế hoạch.`, 'Quỹ có thể dùng điều này để ép điều khoản.'],
+        p: [{r: 'Chọn hướng xử lý?', o: [
+            ['Cắt chi phí không tạo doanh thu, nói rõ với quỹ', {b: -8, t: 2}, 'Quỹ thấy bạn kiểm soát được tiền.', 'd:cut'],
+            ['Giữ nguyên chi tiêu, không nhắc runway', {t: -4}, 'Quỹ xem sổ và thấy ngay.', 'r:fin'],
+            ['Xin cổ đông cũ bridge loan', {c: 3, t: -1, v: -2}, 'Có thêm thời gian nhưng bị pha loãng.', '']]},
+            {f: (S, T, g) => g.cut, r: 'Quỹ hỏi cắt chi phí có làm chậm tăng trưởng không?', o: [
+            ['Trình danh mục cắt và khoản bảo vệ doanh thu', {t: 3}, 'Quỹ thấy kế hoạch có kỷ luật.', '', 'sales|cost|eff|ar', {t: 1}, 'Quỹ muốn thấy số liệu cụ thể hơn.'],
+            ['Nói tăng trưởng không bị ảnh hưởng', {t: -3}, 'Quỹ không tin lời nói thiếu số liệu.', '']]}]
+    }, {
+        id: 'spk', ty: 'fin', lv: 1, st: ['mid', 'pre'], who: 'QUẢN LÝ', h: 'ĐƠN TĂNG VỌT, TIỀN CẠN', w: c => c.tg.rush || c.tg.cond ? .5 : 1.5, tw: () => ({g: rn(40, 90)}),
+        i: (S, T, L) => [`Đơn ${L.o} tăng ${T.g}% sau hai tuần, nhưng phải chi trước nguyên liệu và nhân sự.`, 'Tiền thu về sau ít nhất 45 ngày.'],
+        p: [{r: 'Nhận đơn thế nào?', o: [
+            ['Nhận theo đợt, thu cọc, đặt hàng theo mốc', {c: -.1, t: 3, v: 2}, 'Tăng trưởng đi cùng dòng tiền an toàn.', 't:cond'],
+            ['Nhận hết bằng mọi giá', {c: -.5, m: -3, b: 5}, 'Doanh số đẹp nhưng tiền cạn, đội kiệt sức.', 't:rush'],
+            ['Giới hạn đơn để giữ chất lượng', {v: -2}, 'An toàn nhưng bỏ lỡ tăng trưởng.', '']]}]
+    }, {
+        id: 'law', ty: 'law', lv: 1, st: ['dd'], who: 'LUẬT SƯ', h: 'LUẬT SƯ PHÁT HIỆN VẤN ĐỀ HỢP ĐỒNG/IP', w: c => c.prep.law ? .5 : 1.8, tw: () => ({k: rn(0, 2)}),
+        i: (S, T) => [`Luật sư thấy ${['hợp đồng cho đối tác giữ quyền dùng công nghệ/công thức', 'nhãn hiệu chưa đăng ký', 'điều khoản độc quyền chưa công bố'][T.k]}.`],
+        p: [{r: 'Xử lý vấn đề pháp lý?', o: [
+            ['Làm việc với đối tác để sửa/đăng ký/công bố, ghi vào data room', {c: -.2, t: 2, p: 3}, 'Rủi ro được kiểm soát có hồ sơ.', ''],
+            ['Giải thích đây chỉ là lỗi hình thức', {t: -3, h: 3}, 'Luật sư quỹ đánh giá đây là rủi ro thật.', 'r:law'],
+            ['Che đi, hy vọng không ai hỏi', {t: -6, h: 5}, 'Quỹ phát hiện, niềm tin sụt mạnh.', 'r:law']]}]
+    }, {
+        id: 'tax', ty: 'law', lv: 1, st: ['dd', 'ic'], who: 'CƠ QUAN THUẾ', h: 'THANH TRA THUẾ BẤT NGỜ', w: c => c.tg.doc || c.prep.fin ? .6 : 1.4,
+        i: () => ['Đoàn kiểm tra yêu cầu hóa đơn và sổ sách ba tháng gần nhất.'],
+        p: [{r: 'Làm việc với đoàn kiểm tra thế nào?', o: [
+            ['Hợp tác, trình đủ hồ sơ, lập biên bản làm việc', {c: -.1, t: 3, cr: 3}, 'Đoàn không phát hiện sai phạm. Quỹ ghi nhận.', 't:tax', 'doc|ord|inv', {c: -.2, t: 1}, 'Bạn mất thời gian tìm hồ sơ nên bị yêu cầu giải trình thêm.'],
+            ['Trì hoãn để chuẩn bị thêm', {t: -2, cr: -2}, 'Đoàn đặt thêm lịch làm việc.', ''],
+            ['Nhờ người quen xử lý', {t: -8, cr: -6, v: -4}, 'Rủi ro pháp lý nghiêm trọng.', 'r:law']]}]
+    }, {
+        id: 'bnk', ty: 'fin', lv: 1, st: ['pre', 'dd'], who: 'NGÂN HÀNG', h: 'NGÂN HÀNG ĐÒI SỐ LIỆU MỚI', rq: c => c.debt > 0 || CO.loans.length > 0, w: c => c.debt > 0 ? 3 : 1,
+        i: () => ['Ngân hàng yêu cầu báo cáo tài chính cập nhật để rà hạn mức.'],
+        p: [{r: 'Gửi số liệu nào?', o: [
+            ['Gửi cùng bộ số đã đối chiếu với data room', {t: 2, cr: 3}, 'Hai bộ số khớp nhau. Tín dụng tốt hơn.', ''],
+            ['Gửi số khác data room để dễ xin hạn mức', {cr: 3, t: -7}, 'Quỹ phát hiện hai bộ số khác nhau.', 'r:fin'],
+            ['Trì hoãn', {cr: -4}, 'Điểm tín dụng giảm.', '']]}]
+    }, {
+        id: 'fnd', ty: 'law', lv: 2, st: ['dd', 'ic'], who: 'ĐỒNG SÁNG LẬP', h: 'ĐỒNG SÁNG LẬP BẤT ĐỒNG', w: c => c.own < 60 ? 2 : 1,
+        i: () => ['Đồng sáng lập phản đối mức pha loãng và đòi giữ nhiều cổ phần hơn.', 'Quỹ sẽ không rót vốn nếu nội bộ chưa thống nhất.'],
+        p: [{r: 'Giải quyết bất đồng?', o: [
+            ['Họp riêng, làm rõ cap table và vesting, ký thỏa thuận cổ đông', {c: -.05, t: 3, m: 2}, 'Hai bên ký thỏa thuận. Quỹ yên tâm về quản trị.', ''],
+            ['Dùng quyền CEO quyết định một mình', {t: -4, m: -4}, 'Mất đồng thuận, quỹ lo về quản trị.', 'r:law'],
+            ['Hứa thêm cổ phần ngoài tài liệu', {h: 3, t: -3}, 'Cam kết miệng gây rủi ro pháp lý và pha loãng.', 'r:law']]}]
+    }, {
+        id: 'ptn', ty: 'mkt', lv: 1, st: ['pre', 'ic'], who: 'ĐỐI TÁC', h: 'ĐỐI TÁC ĐÒI ĐÀM PHÁN LẠI', w: c => c.tg.deal || c.tg.swap ? 1.5 : 1, tw: () => ({g: rn(8, 20)}),
+        i: (S, T) => [`Đối tác lớn muốn giảm giá ${T.g}% đổi lấy cam kết dài hạn.`],
+        p: [{r: 'Phản hồi?', o: [
+            ['Đổi giảm giá lấy cam kết số lượng và thanh toán sớm', {t: 2, v: 2}, 'Hợp đồng cân bằng cho cả hai bên.', 't:swap'],
+            ['Từ chối thẳng', {v: -3}, 'Đối tác tìm nhà cung cấp khác.', ''],
+            ['Đồng ý hết, không điều kiện', {t: -2, v: -2, c: -.1}, 'Biên giảm, quỹ sẽ hỏi.', 'r:fin']]}]
+    }, {
+        id: 'mna', ty: 'ma', lv: 2, st: ['ic'], who: 'BÊN MUA', h: 'CÓ NGƯỜI MUỐN MUA LẠI CÔNG TY', opt: 1, rq: c => c.r > 0, w: c => c.ik === 'gr' ? .8 : 1.5, tw: () => ({g: rn(10, 30)}),
+        i: (S, T) => [`Một tập đoàn trong ngành muốn mua ${S.name} với giá cao hơn vòng này ${T.g}%.`, 'Họ cần trả lời trong hai ngày.'],
+        p: [{r: 'Đối xử với đề nghị này?', o: [
+            ['Xác minh đề nghị và dùng làm đòn bẩy với quỹ', {t: 1, v: 3, p: 3}, 'Quỹ thấy công ty có sức hút thật.', 'f:buy'],
+            ['Bỏ qua, tập trung vào quỹ', {t: 1}, 'Quỹ thấy bạn cam kết với vòng này.', ''],
+            ['Nói với quỹ có đề nghị mua dù chưa xác minh', {t: -6}, 'Quỹ kiểm chứng và không thấy gì.', 'r:oth']]}]
+    }, {
+        id: 'buy', ty: 'ma', lv: 2, st: ['ic'], who: 'BÊN MUA', h: 'BÊN MUA ĐÒI THÔNG TIN SƠ BỘ', fu: 1, sm: 1,
+        i: () => ['Bên mua gửi NDA và đòi thông tin sơ bộ: doanh thu, khách hàng, hợp đồng, tài sản trí tuệ.'],
+        p: [{r: 'Chia sẻ thông tin thế nào?', o: [
+            ['Ký NDA, chỉ chia sẻ số liệu đã kiểm chứng', {t: 3, v: 3, p: 4}, 'Bên mua ấn tượng, quỹ thấy giá trị công ty được xác nhận.', '', 'doc|data|pack|ord', {t: 1, v: 1}, 'Thông tin chưa đủ để bên mua đánh giá.'],
+            ['Gửi toàn bộ hồ sơ mật, không NDA', {t: -5, h: 3}, 'Thông tin nhạy cảm bị lộ.', 'r:law'],
+            ['Từ chối chia sẻ', {v: -1}, 'Bên mua rút lui.', '']]}]
+    }, {
+        id: 'chg', ty: 'fin', lv: 1, st: ['ic'], who: 'INV', h: 'QUỸ ĐỔI ĐIỀU KHOẢN SAU DD',
+        w: c => 1 + c.rk * 1.2 + (c.trust < 65 ? 1 : 0) + (c.ik === 'gr' ? 1 : 0), tw: () => ({k: rn(0, 2)}),
+        i: (S, T) => [`Sau thẩm định, quỹ muốn ${['giảm định giá', 'thêm quyền ưu tiên thanh toán 1x', 'giảm vốn đợt đầu và giải ngân theo mốc'][T.k]}.`],
+        p: [{r: 'Đáp lại thế nào?', o: [
+            ['Phản biện bằng số liệu, đề xuất cấu trúc trung gian', {t: 2, v: 2}, 'Quỹ nhượng một phần.', '', 'sales|ord|cost|fixed|rev', {t: -2, v: -4}, 'Bạn thiếu số liệu nên quỹ giữ nguyên yêu cầu.'],
+            ['Chấp nhận để chốt nhanh', {t: 2, v: -5, a: -8}, 'Quỹ hài lòng nhưng bạn nhượng nhiều.', ''],
+            ['Dọa rút khỏi deal', {t: -6}, 'Quỹ không nhượng bộ và ghi nhận thái độ.', 'r:oth']]}]
+    }, {
+        id: 'liab', ty: 'law', lv: 2, st: ['dd', 'ic'], who: 'LUẬT SƯ', h: 'PHÁT HIỆN KHOẢN NỢ TIỀM ẨN', hid: 1, w: c => 1 + c.rk * .8, tw: () => ({k: rn(0, 2), m: rn(40, 200)}),
+        i: (S, T) => [`Luật sư thấy khoản nợ tiềm ẩn: ${['bảo hiểm xã hội đóng thiếu', 'bảo hành sản phẩm chưa lập dự phòng', 'tranh chấp hợp đồng cũ chưa công bố'][T.k]}, khoảng ${T.m} nghìn USD.`],
+        p: [{r: 'Xử lý khoản này?', o: [
+            ['Công bố, lập dự phòng và kế hoạch thanh toán', {c: -.3, t: 1, p: 3}, 'Quỹ tính vào định giá nhưng tin bạn hơn.', '', 'early', {c: -.3, t: -1}, 'Bạn để quỹ phát hiện trước nên khó thuyết phục hơn.'],
+            ['Đàm phán giảm với bên liên quan', {c: -.15, t: -1}, 'Giảm được một phần, còn lại phải trả.', ''],
+            ['Che giấu', {t: -8, h: 6, v: -5}, 'Quỹ phát hiện, niềm tin sụp đổ.', 'r:law']]}]
+    }, {
+        id: 'ec1', ty: 'echo', lv: 1, st: ['pre', 'dd'], who: 'QUẢN ĐỐC', h: 'HẬU QUẢ CHẠY ĐƠN GẤP', rq: c => c.tg.rush, w: () => 5,
+        i: () => ['Sau đợt chạy đơn gấp, tỷ lệ lỗi tăng và hai công nhân nghỉ ca.'],
+        p: [{r: 'Xử lý hậu quả?', o: [
+            ['Dừng nhận đơn mới, sửa quy trình và báo khách', {c: -.2, m: 3, t: 2}, 'Chất lượng ổn định lại.', 'x:rush'],
+            ['Tiếp tục chạy đơn', {m: -5, cr: -3, t: -3}, 'Khiếu nại tăng, quỹ ghi nhận.', 'r:oth']]}]
+    }, {
+        id: 'ec2', ty: 'echo', lv: 1, st: ['pre', 'dd'], who: 'CFO', h: 'HẬU QUẢ ĐẦU TƯ LỚN TRƯỚC ĐÓ', rq: c => c.tg.big || c.tg.big2 || c.tg.pre, w: () => 5,
+        i: () => ['Khoản chi lớn trước đó làm tiền mặt mỏng hơn dự kiến.'],
+        p: [{r: 'Xử lý tiền mặt?', o: [
+            ['Hoãn chi tiêu, đàm phán trả chậm', {b: -5, t: 1}, 'Tiền mặt dễ thở hơn.', 'x:big x:big2 x:pre'],
+            ['Vay nóng', {c: 3, cr: -5, b: 4}, 'Có tiền nhưng chi phí vay cao.', 'x:big x:big2 x:pre'],
+            ['Giấu quỹ', {t: -4}, 'Quỹ xem sổ và thấy tiền mặt mỏng.', 'r:fin']]}]
+    }, {
+        id: 'ec3', ty: 'echo', lv: 1, st: ['mid', 'ic'], who: 'INV', h: 'HẬU QUẢ GIẢM GIÁ TRƯỚC ĐÓ', rq: c => c.tg.cut || c.tg.cut2, w: () => 5,
+        i: () => ['Biên của bạn giảm rõ sau đợt hạ giá. Tại sao?'],
+        p: [{r: 'Giải thích biên giảm?', o: [
+            ['Trình dữ liệu giá theo nhóm khách và kế hoạch phục hồi biên', {t: 3}, 'Quỹ thấy bạn có kế hoạch.', 'x:cut x:cut2', 'tier|why|verify|net', {t: -3, v: -2}, 'Bạn thiếu dữ liệu nên quỹ lo ngại.'],
+            ['Nói chỉ là tạm thời', {t: -3}, 'Quỹ không tin lời hứa suông.', 'r:fin']]}]
+    }, {
+        id: 'ec4', ty: 'echo', lv: 1, st: ['mid', 'pre'], who: 'INV', h: 'QUỸ NHẮC LẠI LẦN TRƯỚC CHỈ CHĂM VẺ NGOÀI', rq: c => c.tg.show, w: () => 5,
+        i: () => ['Lần trước chỉ thấy khu tiếp khách rất đẹp. Hôm nay tôi muốn xem phần còn lại.'],
+        p: [{r: 'Phản ứng?', o: [
+            ['Cho xem toàn bộ số liệu thật kèm kế hoạch', {t: 2, c: -.1}, 'Quỹ ghi nhận thái độ cởi mở.', 'x:show'],
+            ['Dựng lại màn trình diễn', {t: -5}, 'Quỹ nhận ra ngay.', 'r:oth']]}]
+    }];
+DLD.forEach(e => BY[e.id] = e);
+const ctx = k => ({k, ik: INVESTOR_OFFICES[k].style, r: CO.r, n: CH.n, ind: ST.k, rw: rwy(), cash: CO.cash, cr: CO.credit, rep: CO.rep, mor: CO.mor || 60,
+        debt: CO.debt, own: CO.own, prep: CO.prep, tg: X.tg, rk: X.rk.length, d: qstate(k).dv.tg, trust: qstate(k).trust, dn: DL.done, phys: PH.includes(ST.k)}),
+    has = (n, s) => !n || n.split('|').some(t => X.tg[t] || s.dv.tg[t]),
+    pickE = (st, k) => {
+        const c = ctx(k), s = qstate(k), L = Math.min(2, CO.r),
+            pl = DLD.filter(e => !e.fu && e.st.includes(st) && e.lv <= Math.min(2, CO.r + (CH.n > 1)) && (!e.ind || e.ind.includes(c.ind)) && (!e.rq || e.rq(c)) && !s.dv.ids[e.id]),
+            w = pl.map(e => Math.max(0, e.w ? e.w(c) : 1) * (e.lv === L ? 2 : 1) * (DL.done[e.id] ? .25 : 1) * (s.dv.ty[e.ty] ? .3 : 1));
+        let r = Math.random() * w.reduce((a, b) => a + b, 0);
+        return pl.find((e, i) => (r -= w[i]) < 0) || null
+    },
+    dfx = (e, s, am) => {
+        if (!e) return;
+        const M = (1 + .25 * CO.r + .1 * (CH.n - 1)) * (am ? 1.4 : 1), k = n => n < 0 ? n * M : n, sg = n => (n > 0 ? '+' : '') + n, o = {}, p = [];
+        if (e.t) p.push('TIN TƯỞNG ' + sg(Math.round(k(e.t)))), s.trust = cl(s.trust + Math.round(k(e.t)));
+        if (e.v) p.push('ĐỊNH GIÁ ' + sg(Math.round(k(e.v))) + '%'), s.tier ? s.pre = Math.round(s.pre * (1 + k(e.v) / 100)) : s.vm += Math.round(k(e.v));
+        if (e.a && s.tier) p.push('VỐN ' + sg(Math.round(k(e.a))) + '%'), s.amount = r1(Math.max(0, s.amount * (1 + k(e.a) / 100)));
+        if (e.h && s.tier) p.push('SÁNG LẬP -' + Math.round(k(e.h)) + '%'), s.lh = (s.lh || 0) + Math.round(k(Math.abs(e.h)) * (e.h < 0 ? -1 : 1));
+        if (s.tier) s.eq = s.amount / (s.pre + s.amount);
+        ['c', 'cr', 'm', 'b', 'p'].forEach(q => e[q] && (o[q] = e[q]));
+        if (Object.keys(o).length) fx(o);
+        if (p.length) G.toast = {s: p.join(' | '), t: 0}, AU.sfx((e.t || 0) + (e.v || 0) >= 0 ? 'good' : 'bad')
+    },
+    dtag = (k, s) => (k || '').split(' ').forEach(t => {
+        if (!t) return;
+        if (t[0] === 'd') s.dv.tg[t.slice(2)] = 1;
+        else if (t[0] === 'f') DL.q.push({id: t.slice(2), from: ORD.indexOf(DL.st)});
+        else if (t[0] === 'x') delete X.tg[t.slice(2)];
+        else if (t[0] === 'r' && DL.st === 'ic') s.trust = cl(s.trust - 3);
+        else if (t[0] !== 'i') tags(t)
+    }),
+    runE = (e, k, am, done) => {
+        const s = qstate(k), a = {T: e.tw ? e.tw() : {}, am}, inv = G.map.inv, nm = e.who === 'INV' ? inv.name : e.who;
+        DL.done[e.id] = s.dv.ids[e.id] = s.dv.ty[e.ty] = 1;
+        s.dv.n++;
+        if (e.hid && !am) s.dv.tg.early = 1;
+        CH.log.push('Sự kiện: ' + e.h);
+        const ph = i => {
+            while (i < e.p.length && e.p[i].f && !e.p[i].f(ST, a.T, s.dv.tg)) i++;
+            const p = e.p[i];
+            if (!p) return done();
+            const ix = sf(p.o.map((_, j) => j));
+            menu(nm, 'SỰ KIỆN ' + s.dv.n + ': ' + e.h, v(p.r, a), ix.map(j => v(p.o[j][0], a)), z => {
+                const o = p.o[ix[z]], ok = has(o[4], s);
+                dfx(ok ? o[1] : o[5] || o[1], s, am);
+                dtag(v(o[3], a), s);
+                talk([[nm, 'KẾT QUẢ', [v(ok ? o[2] : o[6] || o[2], a)]]], () => ph(i + 1))
+            })
+        };
+        talk([[nm, e.h, v(e.i, a), e.who === 'INV' ? inv : null]], () => e.opt ?
+            menu(nm, e.h, 'Việc này không bắt buộc. Xử lý ngay?', ['Xử lý ngay', 'Bỏ qua'], z => z ? done() : ph(0)) : ph(0))
+    },
+    one = (e, k, st, am, next) => {
+        const early = CO.prep.audit || X.tg.inv || X.tg.cogs || X.tg.ord || X.tg.found;
+        if (e.hid && !am && !early) {
+            if (st === 'dd' || st === 'ic') return runE(e, k, 1, next);
+            return menu('KẾ TOÁN', 'DẤU HIỆU BẤT THƯỜNG', 'Có chỗ lạ trong số liệu mà chưa rõ nguyên nhân. Điều tra ngay hay để sau?',
+                ['Điều tra ngay (tốn thời gian và chi phí)', 'Để sau, tập trung vào buổi gặp'], z => {
+                    if (!z) { fx({c: -.1}); runE(e, k, 0, next) } else { DL.q.push({id: e.id, from: ORD.indexOf(st), am: 1}); next() }
+                })
+        }
+        runE(e, k, am, next)
+    },
+    stage = (k, st, done) => {
+        const c = INVESTOR_OFFICES[k], s = qstate(k);
+        if (!s.dv || c.svc || c.loan || c.venue || CO.r >= ROUNDS.length) return done();
+        DL.st = st;
+        const si = ORD.indexOf(st), fu = [];
+        DL.q = DL.q.filter(f => {
+            const e = BY[f.id];
+            if (e && fu.length < 2 && e.st.includes(st) && (e.sm || f.from < si)) return fu.push([e, f.am]), false;
+            return true
+        });
+        const tot = fu.length + PL[Math.min(2, CO.r)][si] + (st === 'dd' && CH.n > 2 ? 1 : 0), gx = i => {
+            if (i >= tot) return done();
+            const f = fu[i], e = f ? f[0] : pickE(st, k);
+            if (!e) return done();
+            one(e, k, st, f ? f[1] : 0, () => gx(i + 1))
+        };
+        if (tot) G.q = null;
+        gx(0)
+    };
+/* ---------- MÓC VÀO LUỒNG DEAL CÓ SẴN ---------- */
+const _b2 = beginRound, _a2 = askQ, _n2 = negoStart, _d2 = dealFlow, _s2 = setupChapter;
+beginRound = function(k) {
+    const r = _b2.apply(this, arguments);
+    qstate(k).dv = {tg: {}, ty: {}, ids: {}, n: 0};
+    DL.q = [];
+    return r
+};
+askQ = function(k) {
+    const s = qstate(k);
+    if (s.dv && !s.dv.mid && s.i === 2 && s.i < s.qs.length) return s.dv.mid = 1, stage(k, 'mid', () => _a2(k));
+    return _a2(k)
+};
+negoStart = function(k) {
+    const s = qstate(k);
+    if (s.dv && !s.dv.pre) return s.dv.pre = 1, stage(k, 'pre', () => {
+        G.player.busy = true;
+        G.map.inv.busy = true;
+        _n2(k)
+    });
+    return _n2(k)
+};
+dealFlow = function(k, ph) {
+    const s = qstate(k), f = ph === 'A' ? 'fdd' : 'fic';
+    if (s.dv && !s.dv[f]) return s.dv[f] = 1, stage(k, ph === 'A' ? 'dd' : 'ic', () => _d2(k, ph));
+    return _d2(k, ph)
+};
+setupChapter = function() {
+    _s2.apply(this, arguments);
+    DL.q = [];
+    DL.done = {}
+};
+
+    return {rk: t => X.rk.filter(r => r === t).length, CHD, cur, X, DLD, DL}
+})();
+
 </script>
 </body>
 
