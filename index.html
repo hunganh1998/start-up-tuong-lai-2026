@@ -6635,7 +6635,7 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
                 return false
             } catch (e) { return true }
         }
-        const goal = () => CO.r >= ROUNDS.length ? 'HOÀN THÀNH - TỰ DO KHÁM PHÁ' : !CO.prep.fin ? 'MỤC TIÊU: RÀ SOÁT TÀI CHÍNH Ở TRIỆU NIỀM VUI' : !CO.prep.law ? 'MỤC TIÊU: TƯ VẤN PHÁP LÝ Ở LẮC LƯ LAW' : !CO.prep.audit ? 'MỤC TIÊU: KIỂM TOÁN Ở KẾ MÈ AUDIT' : !chxDone('f') ? 'MỤC TIÊU: VÀO NHÀ MÁY Ở KCN LÀM THỬ THÁCH' : !chxDone('m') ? 'MỤC TIÊU: VÀO CỬA HÀNG Ở CHÙA BỘC LÀM THỬ THÁCH' : 'MỤC TIÊU: GỌI VỐN ' + ROUNDS[CO.r].n + (CO.tip ? '' : ' (PHỤ: HỎI NHÀ ĐẦU TƯ)');
+        const goal = () => CO.r >= ROUNDS.length ? 'HOÀN THÀNH - TỰ DO KHÁM PHÁ' : !CO.prep.fin ? 'MỤC TIÊU: RÀ SOÁT TÀI CHÍNH Ở TRIỆU NIỀM VUI' : !CO.prep.law ? 'MỤC TIÊU: TƯ VẤN PHÁP LÝ Ở LẮC LƯ LAW' : !CO.prep.audit ? 'MỤC TIÊU: KIỂM TOÁN Ở KẾ MÈ AUDIT' : !chxDone('f') ? 'MỤC TIÊU: VÀO NHÀ MÁY Ở KCN LÀM THỬ THÁCH (' + (+chxDone('m')) + '/2)' : !chxDone('m') ? 'MỤC TIÊU: VÀO CỬA HÀNG Ở CHÙA BỘC LÀM THỬ THÁCH (1/2)' : 'MỤC TIÊU: GỌI VỐN ' + ROUNDS[CO.r].n + (CO.tip ? '' : ' (PHỤ: HỎI NHÀ ĐẦU TƯ)');
         const objTarget = () => {
             if (CO.r >= ROUNDS.length) return null;
             if (!CO.prep.fin) return {
@@ -10110,7 +10110,19 @@ const __STARTUP_TUONG_LAI_RIGHTS__ = Object.freeze({
                     '<div>• <b>Runway</b> = tiền mặt ÷ burn rate. Dưới 6 tháng = yếu thế đàm phán.</div>' +
                     '<div>• <b>Liquidation preference</b>: quỹ lấy tiền trước khi chia cho cổ đông thường.</div>' +
                     '<div>• <b>Pha loãng</b>: cổ phần cũ nhân với (1 trừ % bán mới), không trừ trực tiếp.</div></div>' +
-                    '<div class="card"><h3>🏦 Ngân hàng</h3>Khi cần vốn gấp, ghé Vietcombank hoặc Techcombank để vay. Điểm tín dụng cao, tài sản đảm bảo, và mục đích rõ ràng giúp bạn được duyệt.</div>' +
+                    '<div class="card"><h3>📖 Từ điển nhanh (nói đơn giản)</h3>' +
+'<div>• <b>Vốn</b>: tiền bỏ vào để làm ăn. <b>Gọi vốn</b>: mời quỹ đưa tiền, đổi lại họ nhận một phần công ty.</div>' +
+'<div>• <b>Cổ phần</b>: phần sở hữu công ty. <b>Định giá</b>: công ty đang đáng giá bao nhiêu tiền.</div>' +
+'<div>• <b>Burn rate</b>: số tiền công ty tiêu mỗi tháng. <b>Runway</b>: tiền hiện có đủ chạy mấy tháng.</div>' +
+'<div>• <b>Doanh thu</b>: tiền thu từ bán hàng. <b>Lợi nhuận</b>: doanh thu trừ chi phí. <b>Dòng tiền</b>: tiền vào và tiền ra.</div>' +
+'<div>• <b>Thẩm định (DD)</b>: quỹ kiểm tra kỹ công ty trước khi đưa tiền. <b>Kiểm toán</b>: bên thứ ba kiểm tra sổ sách có đúng không.</div>' +
+'<div>• <b>ESOP</b>: phần cổ phần để thưởng nhân viên. <b>Pha loãng</b>: bạn giữ ít phần trăm hơn khi bán thêm cổ phần.</div>' +
+'<div>• <b>Seed, Series A, Series B</b>: các vòng gọi vốn từ nhỏ đến lớn.</div></div>' +
+'<div class="card"><h3>🏭 Thử thách nhà máy và cửa hàng</h3>' +
+'<div>• Mỗi vòng cần làm đủ 2 thử thách: một ở nhà máy (KCN), một ở cửa hàng (Chùa Bộc), trước khi gặp quỹ.</div>' +
+'<div>• Vào bên trong bất kỳ nhà máy hoặc cửa hàng, đi theo thanh mục tiêu và mũi tên vàng tới người cần gặp.</div>' +
+'<div>• Mẹo: chọn cách làm thật. Ghi số thật, kiểm tra tận nơi, báo sớm, không giấu và không đổ lỗi.</div></div>' +
+'<div class="card"><h3>🏦 Ngân hàng</h3>Khi cần vốn gấp, ghé Vietcombank hoặc Techcombank để vay. Điểm tín dụng cao, tài sản đảm bảo, và mục đích rõ ràng giúp bạn được duyệt.</div>' +
                     '<div class="card"><h3>💡 Mẹo chơi</h3>' +
                     '<div>• Ghé các quán ăn / quán cà phê để kiếm thêm +0.1M và điểm thưởng.</div>' +
                     '<div>• Đãi đối tác ở nhà hàng để tăng tín nhiệm.</div>' +
@@ -13119,7 +13131,15 @@ const FQ=[
  ['Vì sao cần có lối thoát hiểm thông thoáng?', 'Để mọi người ra nhanh khi có sự cố', 'Để trang trí', 'Để chứa thêm hàng'],
  ['Máy hay dừng đột xuất. Cách làm đúng?', 'Ghi lại thời gian, nguyên nhân rồi sửa', 'Chạy tiếp, ai hỏi thì nói ổn', 'Tắt máy luôn không báo'],
  ['Kho thực tế ít hơn sổ ghi. Nên làm gì?', 'Đếm lại, tìm nguyên nhân và ghi số thật', 'Sửa sổ cho khớp mà không ghi lý do', 'Để nguyên không ai biết'],
- ['Thêm bước kiểm tra chất lượng có lợi gì?', 'Hàng lỗi được chặn trước khi đến tay khách', 'Làm sản phẩm đắt hơn vô ích', 'Không có lợi gì']]
+ ['Thêm bước kiểm tra chất lượng có lợi gì?', 'Hàng lỗi được chặn trước khi đến tay khách', 'Làm sản phẩm đắt hơn vô ích', 'Không có lợi gì'],
+ ['Công nhân mới đến làm ngày đầu. Nên làm gì trước?', 'Hướng dẫn an toàn và cách dùng máy', 'Cho làm ngay để kịp đơn', 'Bảo tự học'],
+ ['Sàn xưởng bị dầu loang. Nên làm gì?', 'Lau sạch và đặt biển cảnh báo', 'Đi vòng tránh', 'Để cuối ca mới lau'],
+ ['Hai ca làm việc bàn giao. Điều gì quan trọng nhất?', 'Ghi lại tình trạng máy và việc dở dang', 'Chỉ nói miệng cho nhanh', 'Không cần bàn giao'],
+ ['Hàng thành phẩm cần xếp kho. Cách nào hợp lý?', 'Dán nhãn rõ, xếp theo lô, hàng cũ lấy trước', 'Xếp lộn xộn cho nhanh', 'Hàng mới xếp ra trước'],
+ ['Máy phát ra tiếng kêu lạ. Nên làm gì?', 'Dừng máy và báo kỹ thuật kiểm tra', 'Cứ chạy tiếp cho kịp đơn', 'Tăng tốc để át tiếng'],
+ ['Khách đặt gấp, nhà máy không kịp. Nên làm gì?', 'Nói thật khả năng và hẹn ngày giao hợp lý', 'Nhận hết rồi tính sau', 'Từ chối ngay không giải thích'],
+ ['Nhân viên đề xuất cách làm nhanh hơn. Nên làm gì?', 'Nghe, thử nhỏ rồi áp dụng nếu hiệu quả', 'Bỏ qua vì đã quen cách cũ', 'Áp dụng ngay cho cả xưởng'],
+ ['Vì sao nên ghi số sản phẩm làm ra mỗi ngày?', 'Để biết năng suất và phát hiện bất thường sớm', 'Để cho đủ giấy tờ', 'Không cần thiết']]
 const SQ=[
  ['Khách chê giá hơi cao. Nên làm gì trước?', 'Hỏi vì sao khách thấy vậy', 'Giảm giá ngay', 'Mặc kệ'],
  ['Hàng sắp hết hạn trên kệ. Nên làm gì?', 'Khuyến mãi sớm và ghi rõ hạn sử dụng', 'Trộn lẫn với hàng mới', 'Để đó cho chắc'],
@@ -13128,8 +13148,16 @@ const SQ=[
  ['Món bán chạy hay hết hàng. Nên làm gì?', 'Nhập thêm vừa đủ theo số đã ghi', 'Nhập thật nhiều cho chắc', 'Không nhập nữa'],
  ['Vì sao cần ghi chép số khách và số bán?', 'Để biết cửa hàng đang làm tốt hay chưa', 'Để cho đẹp sổ sách', 'Không cần ghi'],
  ['Cửa hàng bên cạnh bán rẻ hơn. Nên làm gì?', 'Xem họ bán gì, chất lượng ra sao rồi so với mình', 'Bán thấp hơn họ mọi giá', 'Nói xấu họ với khách'],
- ['Khách hỏi nguồn gốc hàng. Nên làm gì?', 'Cho xem giấy tờ và giải thích rõ ràng', 'Nói đó là bí mật', 'Bảo khách đừng hỏi']]
-globalThis.mqAdd=()=>{MQ.factory=MQ.factory.concat(FQ);MQ.shop=MQ.shop.concat(SQ)};mqAdd();
+ ['Khách hỏi nguồn gốc hàng. Nên làm gì?', 'Cho xem giấy tờ và giải thích rõ ràng', 'Nói đó là bí mật', 'Bảo khách đừng hỏi'],
+ ['Khách đứng chờ thanh toán lâu. Nên làm gì?', 'Xin lỗi và mở thêm quầy hoặc hỗ trợ nhanh', 'Mặc kệ, ai cũng phải chờ', 'Bảo khách đi chỗ khác'],
+ ['Khách muốn đổi hàng đã mua. Nên làm gì?', 'Xem chính sách đổi trả và hỗ trợ lịch sự', 'Từ chối ngay', 'Đổi mà không kiểm tra'],
+ ['Bày hàng thế nào để dễ bán?', 'Món bán chạy để chỗ dễ thấy, ghi giá rõ', 'Giấu món bán chạy ở góc trong', 'Không ghi giá'],
+ ['Cửa hàng ít khách buổi chiều. Nên làm gì?', 'Thử khuyến mãi giờ vắng và ghi lại kết quả', 'Đóng cửa sớm', 'Tăng giá để bù'],
+ ['Khách chê nhân viên thiếu thân thiện. Nên làm gì?', 'Lắng nghe, góp ý nhân viên và cảm ơn khách', 'Cãi lại khách', 'Không quan tâm'],
+ ['Hàng nhập về thiếu so với phiếu. Nên làm gì?', 'Đếm lại, chụp ảnh và báo nhà cung cấp', 'Cứ nhận, không nói gì', 'Trả lại cả lô hàng'],
+ ['Tiền lẻ trong két sắp hết. Nên làm gì?', 'Chuẩn bị tiền lẻ từ đầu ngày và kiểm lại', 'Chờ hết rồi tính', 'Từ chối khách trả tiền lớn'],
+ ['Vì sao nên hỏi ý kiến khách sau khi mua?', 'Để biết điều cần cải thiện', 'Để khách thấy phiền', 'Không cần hỏi']]
+globalThis.mqAdd=()=>{MQ.factory=FQ.slice();MQ.shop=SQ.slice();MQ.cafe=SQ.slice()};mqAdd();
 console.log('✅ V13 MQ: OK');
 } catch (err) { console.error('❌ LỖI V13:', err); }
 
@@ -13145,8 +13173,11 @@ const amb = (m, a) => a.forEach(([r, x, y, x2], k) => m.npcs.push(new Character(
 amb(iz, [['hoodie', 120, 170, 190], ['casual', 250, 170, 330]]);
 amb(cb, [['passerby', 20, 170, 90], ['casual', 150, 170, 230], ['hoodie', 260, 184, 340], ['designer', 60, 184, 130]]);
 const cast = (m, list, xs, ys, seed) => list.map((n, k) => new Character({role: n.role, name: n.name, x: xs[k % xs.length], y: ys[k % 2], seed: seed + k * 7, dir: 'down', talk: n.talk, col: m.col, speed: CFG.npcSpeed, ai: new Idler(seed + k * 7, ['IDLE', 'INTERACT', 'TALK'])}));
-for (let i = 0; i < 4; i++) { const m = MAPS['fi_' + i]; if (m) m.npcs = cast(m, fc, [44, 82, 120, 158, 196, 234, 272, 310, 340], [166, 186], 900 + i * 9) }
-Object.keys(MAPS).filter(k => /^cb_/.test(k)).forEach((k, i) => { const m = MAPS[k], cl = m.npcs.filter(n => /^NHÂN VIÊN /.test(n.name)); m.npcs = cl.concat(cast(m, mc, [40, 76, 112, 150, 215, 250, 285, 320, 345, 100, 185], [166, 188], 850 + i * 11)) });
+for (let i = 0; i < 4; i++) { const m = MAPS['fi_' + i]; if (m) { const a = cast(m, fc, [44, 82, 120, 158, 196, 234, 272, 310, 340], [166, 186], 900 + i * 9); m._all = a; m._base = a.filter(n => n.name === 'CÔNG NHÂN').slice(0, 1); m.npcs = m._base.slice() } }
+Object.keys(MAPS).filter(k => /^cb_/.test(k)).forEach((k, i) => { const m = MAPS[k], cl = m.npcs.filter(n => /^NHÂN VIÊN /.test(n.name)); const a = cast(m, mc, [40, 76, 112, 150, 215, 250, 285, 320, 345, 100, 185], [166, 188], 850 + i * 11); m._all = a; m._base = cl.concat(a.filter(n => n.name === 'KHÁCH').slice(0, 1)); m.npcs = m._base.slice() });
+const vis = () => { try { const m = G.map; if (!m || !m._all) return; const t = m.key[0] === 'f' ? 'f' : 'm'; CHX.cur(); const a = CHX.X.a[t], st = a && !a.end && a.c.st[a.i], nm = st && typeof st.w === 'string' ? st.w : null, nx = m._base.concat(m._all.filter(n => n.name === nm && !m._base.includes(n))); if (nx.length !== m.npcs.length || nx.some((n, k) => n !== m.npcs[k])) m.npcs = nx } catch (e) {} };
+const _iuV = InteractionManager.prototype.update; InteractionManager.prototype.update = function (G) { vis(); _iuV.call(this, G) };
+const _smV = Game.prototype.setMap; Game.prototype.setMap = function (...a) { const r = _smV.apply(this, a); vis(); return r };
 console.log('✅ V14 NPC THỬ THÁCH VÀO TRONG: OK');
 } catch (err) { console.error('❌ LỖI V14:', err); }
 
