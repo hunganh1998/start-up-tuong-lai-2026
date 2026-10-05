@@ -14422,6 +14422,30 @@ setupChapter = function() {
     if(d.mor)CO.mor=Math.max(0,Math.min(100,CO.mor+d.mor));
     if(d.rival)S.rival+=d.rival;sv()}catch(e){}};
   const E=[
+   {t:'🔥 SỰ CỐ MÁY CHỦ NGỪNG HOẠT ĐỘNG',d:'Hệ thống sập đúng giờ cao điểm, khách hàng phàn nàn rầm rộ.',
+    o:[['Xin lỗi công khai và bồi thường',{cash:-.08,credit:4,mor:3},'Khách đánh giá cao sự thẳng thắn của bạn.'],
+       ['Chỉ sửa lỗi, không nói gì',{credit:-5,val:-.03},'Lỗi qua nhưng niềm tin giảm.']]},
+   {t:'💸 NHÀ CUNG CẤP ĐÒI TRẢ TIỀN TRƯỚC',d:'Nhà cung cấp chính siết điều kiện: trả trước 100% thay vì công nợ 30 ngày.',
+    o:[['Chấp nhận, bảo toàn quan hệ',{cash:-.12,credit:2},'Dòng tiền căng nhưng nguồn hàng ổn định.'],
+       ['Tìm nhà cung cấp thay thế',{cash:-.04,mor:-3,burn:-.04},'Tốn thời gian chuyển đổi nhưng chi phí về sau thấp hơn.']]},
+   {t:'🏆 ĐƯỢC MỜI THAM DỰ CUỘC THI KHỞI NGHIỆP',d:'Ban tổ chức mời bạn pitching, giải thưởng có tiền và truyền thông.',
+    o:[['Tham gia, đầu tư kỹ cho phần thuyết trình',{cash:-.05,val:.06,credit:3},'Bạn không thắng giải nhất nhưng thu hút nhiều nhà đầu tư chú ý.'],
+       ['Bỏ qua, tập trung sản phẩm',{mor:2},'Đội ngũ giữ được nhịp làm việc, nhưng bạn bỏ lỡ cơ hội quảng bá.']]},
+   {t:'🧑‍🤝‍🧑 ĐỒNG SÁNG LẬP MUỐN ĐỔI HƯỚNG',d:'Đồng sáng lập muốn chuyển sang thị trường mới, trong khi doanh thu hiện tại còn nhỏ.',
+    o:[['Thử nghiệm nhỏ trước, đo kết quả',{cash:-.04,val:.03,mor:3},'Cách làm cẩn trọng giúp cả hai cùng yên tâm.'],
+       ['Từ chối thẳng',{mor:-6,credit:1},'Bạn giữ được tập trung nhưng quan hệ nội bộ căng thẳng.']]},
+   {t:'📉 ĐỐI TÁC CHẬM THANH TOÁN',d:'Hai khách hàng lớn nợ hóa đơn quá hạn 60 ngày.',
+    o:[['Siết công nợ, tạm dừng giao hàng',{cash:.06,credit:2,val:-.02},'Bạn thu được tiền nhưng quan hệ nguội lại.'],
+       ['Cho thêm thời gian và giữ quan hệ',{cash:-.06,burn:.03},'Tiền mặt chật hơn một thời gian.']]},
+   {t:'🌱 NHÀ ĐẦU TƯ THIÊN THẦN HỎI THĂM',d:'Một thiên thần từng gặp bạn nhắn hỏi tình hình và muốn đầu tư thêm một khoản nhỏ.',
+    o:[['Nhận vốn nhỏ, chấp nhận pha loãng nhẹ',{cash:.18,val:-.02},'Có thêm tiền mặt, bạn nắm ít hơn một chút.'],
+       ['Từ chối để giữ cổ phần',{credit:2},'Bạn giữ tỷ lệ sở hữu nhưng bỏ qua nguồn vốn dễ lấy.']]},
+   {t:'⚖️ TRANH CHẤP HỢP ĐỒNG',d:'Một đối tác nói bạn vi phạm điều khoản giao hàng và đòi bồi thường.',
+    o:[['Mời luật sư rà soát và thương lượng',{cash:-.06,credit:3},'Hai bên đạt thỏa thuận hợp lý, hợp đồng được ghi rõ hơn.'],
+       ['Đối đầu và kiện ra tòa',{cash:-.15,credit:-4,mor:-4},'Chi phí pháp lý lớn và rất mất thời gian.']]},
+   {t:'🥊 MINH THÉP GẶP KHỦNG HOẢNG',d:'Công ty Minh Thép vừa mất hợp đồng lớn. Nhiều nhân viên của anh ta liên hệ bạn xin việc.',
+    o:[['Nhận vài người giỏi, giữ lịch sự',{cash:-.06,val:.04,rival:1,mor:3},'Đội bạn mạnh lên và Minh Thép không trách bạn.'],
+       ['Gọi hết về để làm yếu đối thủ',{cash:-.12,val:.06,rival:-2,credit:-3},'Bạn có nhân sự nhưng danh tiếng bị tổn hại.']],rv:2},
    {t:'⚡ KHÁCH LỚN DỌA RÚT HỢP ĐỒNG',d:'Khách chiếm 30% doanh thu đòi giảm giá 20% nếu không sẽ chuyển sang bên khác.',
     o:[['Giảm 10% và ký hợp đồng 2 năm',{cash:-.05,credit:3},'Bạn giữ được khách và có doanh thu ổn định hơn.'],
        ['Từ chối, tìm khách mới',{cash:-.1,mor:-5,val:.03},'Mất khách cũ nhưng bớt phụ thuộc. Cần chịu vài tháng khó khăn.']]},
@@ -14478,9 +14502,9 @@ setupChapter = function() {
   }
   function pick(){
     let c=E.filter(e=>!e.rv||(e.rv===1)||(e.rv===2&&S.seen.includes('r1')));
-    const f=c.filter(e=>!S.seen.slice(-4).includes(e.t));
+    const f=c.filter(e=>!S.seen.slice(-8).includes(e.t));
     c=f.length?f:c;const e=c[Math.random()*c.length|0];
-    S.seen.push(e.t);if(e.rv===1)S.seen.push('r1');S.seen=S.seen.slice(-12);sv();return e}
+    S.seen.push(e.t);if(e.rv===1)S.seen.push('r1');S.seen=S.seen.slice(-16);sv();return e}
   setInterval(()=>{
     try{
       if(open||!G||G.intro||G.q||G.fin||(G.dlg&&G.dlg.on)||Menu.on||G.fade>.05){return}
