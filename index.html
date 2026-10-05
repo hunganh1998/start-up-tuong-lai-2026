@@ -14300,6 +14300,194 @@ setupChapter = function() {
     return {rk: t => X.rk.filter(r => r === t).length, CHD, cur, X, DLD, DL}
 })();
 
+
+/* ===== ADD-ON: GIỮ CHÂN NGƯỜI CHƠI (daily / combo / cấp CEO) ===== */
+(function(){
+  const K='tvtd_meta_v1';
+  const today=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+  const yest=()=>{const d=new Date(Date.now()-864e5);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+  let M={xp:0,streak:0,last:'',claimed:'',day:'',q:null,best:0,perfect:0};
+  try{Object.assign(M,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}
+  const save=()=>{try{localStorage.setItem(K,JSON.stringify(M))}catch(e){}};
+  const TITLES=['Thực tập sinh','Founder tập sự','CEO non trẻ','Nhà gọi vốn','Chủ tịch','Huyền thoại'];
+  const need=l=>80+l*60;
+  const lvl=()=>{let x=M.xp,l=0;while(x>=need(l)){x-=need(l);l++}return{l,x,n:need(l)}};
+  const cash=v=>{try{CO.cash=Math.round((CO.cash+v)*100)/100}catch(e){}};
+  const say=s=>{try{Menu.toast(s)}catch(e){}};
+  const addXp=n=>{const a=lvl().l;M.xp+=n;const b=lvl().l;save();
+    if(b>a){say('🎉 LÊN CẤP '+(b+1)+': '+TITLES[Math.min(b,5)]);cash(.1*(b-a))}};
+  function roll(){
+    if(M.day===today()&&M.q)return;
+    M.day=today();
+    M.q=[{id:'mini',t:'Đạt 3 phiên hỏi đáp',n:3,v:0,xp:30,c:.1},
+         {id:'perfect',t:'Đúng 3/3 một phiên',n:1,v:0,xp:40,c:.1},
+         {id:'combo',t:'Đạt chuỗi 5 câu đúng liên tiếp',n:5,v:0,xp:40,c:.15}];
+    save();
+  }
+  function prog(id,add,set){
+    roll();
+    const q=M.q.find(x=>x.id===id);if(!q||q.done)return;
+    q.v=set?Math.max(q.v,add):q.v+add;
+    if(q.v>=q.n){q.done=1;addXp(q.xp);cash(q.c);say('✅ NHIỆM VỤ NGÀY: '+q.t+' (+'+q.c+'M)');
+      if(M.q.every(x=>x.done)){addXp(60);cash(.3);say('🌟 XONG CẢ 3 NHIỆM VỤ! +0.3M')}}
+    save();
+  }
+  let combo=0;
+  const _pick=mPick;
+  mPick=function(n){
+    let ok=false;
+    try{const q=G.q,c=q.qs[q.i].c[n];ok=!!(c&&c.ok)}catch(e){}
+    const had=G.q&&G.q.mode==='mq';
+    const r=_pick.apply(this,arguments);
+    if(had){
+      if(ok){combo++;if(combo>M.best){M.best=combo;save()}
+        prog('combo',combo,1);
+        if(combo>=3){const b=combo>=5?.05:.02;cash(b);say('🔥 CHUỖI '+combo+' · +'+b+'M')}}
+      else combo=0;
+    }
+    return r;
+  };
+  const _done=mDone;
+  mDone=function(){
+    const q=G.q,pass=q&&q.ok>=2,perf=q&&q.ok===q.qs.length;
+    const r=_done.apply(this,arguments);
+    if(q&&q.h&&q.h.c!=='bank'){
+      if(pass){prog('mini',1);addXp(8)}
+      if(perf){prog('perfect',1);M.perfect++;addXp(12);cash(.05);say('⭐ HOÀN HẢO +0.05M');save()}
+    }
+    return r;
+  };
+  const _end=endChapter;
+  endChapter=function(ok){addXp(ok?60:15);combo=0;return _end.apply(this,arguments)};
+
+  function claim(){
+    roll();
+    if(M.claimed===today())return;
+    M.streak=(M.last===yest())?M.streak+1:1;
+    M.last=today();M.claimed=today();
+    const c=Math.min(.1+.05*(M.streak-1),.5);
+    cash(c);addXp(15+5*Math.min(M.streak,7));save();
+    say('🎁 QUÀ NGÀY '+M.streak+': +'+c.toFixed(2)+'M');
+    if(Menu.on&&Menu.view==='daily')Menu.render();
+  }
+  window.TVTD_claim=claim;
+  const _render=Menu.render;
+  Menu.render=function(){
+    if(this.view!=='daily')return _render.apply(this,arguments);
+    roll();
+    const el=document.getElementById('menu');el.classList.add('on');
+    const L=lvl(),can=M.claimed!==today(),pct=Math.round(L.x/L.n*100);
+    const nxt=Math.min(.1+.05*(((M.last===yest()||can&&M.last===yest())?M.streak:0)),.5);
+    let h='<button class="btn r close" onclick="Menu.go(\'main\')">✕</button><h2>🎁 HẰNG NGÀY</h2>'+
+      '<div class="card"><h3>👔 CẤP CEO '+(L.l+1)+' · '+TITLES[Math.min(L.l,5)]+'</h3>'+
+      '<div style="background:#0006;border-radius:6px;height:14px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:#f2c46b"></div></div>'+
+      '<div style="font-size:13px;color:#9fb4d8;margin-top:4px">'+L.x+' / '+L.n+' XP · Chuỗi đúng dài nhất: '+M.best+' · Phiên hoàn hảo: '+M.perfect+'</div></div>'+
+      '<div class="card"><h3>🔥 Chuỗi đăng nhập: '+M.streak+' ngày</h3>'+
+      '<div style="font-size:13px;color:#9fb4d8">Vào chơi mỗi ngày để tăng quà (tối đa +0.5M). Bỏ lỡ 1 ngày chuỗi sẽ về 1.</div>'+
+      (can?'<button class="btn g" onclick="TVTD_claim()">🎁 NHẬN QUÀ HÔM NAY</button>':'<div style="color:#7fe0a0;margin-top:6px">✔ Đã nhận hôm nay. Quay lại ngày mai nhé!</div>')+'</div>'+
+      '<div class="card"><h3>📋 Nhiệm vụ hôm nay</h3>'+
+      M.q.map(q=>'<div class="stats-row"><span class="k">'+(q.done?'✅ ':'⬜ ')+q.t+'</span><span class="v">'+Math.min(q.v,q.n)+'/'+q.n+' · +'+q.c+'M</span></div>').join('')+
+      '<div style="font-size:13px;color:#9fb4d8;margin-top:4px">Làm đủ 3: thưởng thêm +0.3M. Chơi hỏi đáp ở quán, cửa hàng, nhà máy.</div></div>'+
+      '<div style="margin-top:10px"><button class="btn g" onclick="Menu.go(\'main\')">◀ QUAY LẠI</button></div>';
+    el.innerHTML=h;
+  };
+  const _main=Menu.renderMain;
+  Menu.renderMain=function(el){
+    _main.apply(this,arguments);
+    try{
+      roll();const can=M.claimed!==today();
+      const b=el.querySelector('button[onclick*="quest"]');
+      if(b)b.insertAdjacentHTML('beforebegin','<button class="btn g" onclick="Menu.go(\'daily\')">🎁 HẰNG NGÀY'+(can?' ❗':'')+'</button>');
+    }catch(e){}
+  };
+  let hinted=0;
+  setInterval(()=>{
+    try{if(!hinted&&G&&!G.intro&&!G.q&&M.claimed!==today()){hinted=1;say('🎁 Có quà hằng ngày! Mở MENU > HẰNG NGÀY')}}catch(e){}
+  },3000);
+})();
+
+/* ===== ADD-ON 2: SỰ KIỆN NGẪU NHIÊN + ĐỐI THỦ + BỐI CẢNH VĨ MÔ ===== */
+(function(){
+  const K='tvtd_meta2';
+  let S={rival:0,seen:[],lessons:0};
+  try{Object.assign(S,JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){}
+  const sv=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+  const r2=v=>Math.round(v*100)/100;
+  const say=s=>{try{Menu.toast(s)}catch(e){}};
+  const ap=d=>{try{
+    if(d.cash)CO.cash=Math.max(0,r2(CO.cash+d.cash));
+    if(d.burn)CO.burn=Math.max(.03,r2(CO.burn*(1+d.burn)));
+    if(d.credit)CO.credit=Math.max(30,Math.min(100,CO.credit+d.credit));
+    if(d.val)CO.val=Math.max(1,r2(CO.val*(1+d.val)));
+    if(d.mor)CO.mor=Math.max(0,Math.min(100,CO.mor+d.mor));
+    if(d.rival)S.rival+=d.rival;sv()}catch(e){}};
+  const E=[
+   {t:'⚡ KHÁCH LỚN DỌA RÚT HỢP ĐỒNG',d:'Khách chiếm 30% doanh thu đòi giảm giá 20% nếu không sẽ chuyển sang bên khác.',
+    o:[['Giảm 10% và ký hợp đồng 2 năm',{cash:-.05,credit:3},'Bạn giữ được khách và có doanh thu ổn định hơn.'],
+       ['Từ chối, tìm khách mới',{cash:-.1,mor:-5,val:.03},'Mất khách cũ nhưng bớt phụ thuộc. Cần chịu vài tháng khó khăn.']]},
+   {t:'🧑‍💻 NHÂN SỰ CHỦ CHỐT XIN NGHỈ',d:'Trưởng nhóm kỹ thuật được công ty khác trả lương gấp rưỡi.',
+    o:[['Chia ESOP để giữ người',{mor:8,val:.02},'ESOP giúp gắn bó lâu dài, đổi lại bạn bị pha loãng nhẹ.'],
+       ['Để họ đi, tuyển thay',{cash:-.08,mor:-8},'Chi phí tuyển và đào tạo lớn hơn bạn nghĩ.']]},
+   {t:'📰 BÀI BÁO TIÊU CỰC',d:'Một nhà báo công nghệ nêu nghi vấn về số liệu tăng trưởng của bạn.',
+    o:[['Công bố số liệu minh bạch',{credit:5,cash:-.03},'Minh bạch tốn công nhưng giữ được uy tín.'],
+       ['Im lặng chờ qua',{credit:-8,val:-.05},'Sự im lặng bị hiểu là có điều giấu.']]},
+   {t:'🏦 NGÂN HÀNG TĂNG LÃI SUẤT',d:'Lãi vay thả nổi tăng, chi phí hàng tháng nhích lên.',
+    o:[['Trả bớt nợ sớm',{cash:-.1,credit:4,burn:-.05},'Giảm áp lực lãi dài hạn.'],
+       ['Giữ tiền mặt',{burn:.06},'Tiền mặt an toàn nhưng gánh lãi nặng hơn.']]},
+   {t:'🎁 CƠ HỘI HỢP TÁC ĐỘT XUẤT',d:'Một tập đoàn muốn dùng thử sản phẩm của bạn, nhưng đòi ưu tiên độc quyền 1 năm.',
+    o:[['Chấp nhận độc quyền',{cash:.2,val:.05,credit:-2},'Có tiền ngay nhưng bó tay trong thị trường khác.'],
+       ['Đàm phán không độc quyền',{cash:.08,val:.03},'Ít tiền hơn nhưng giữ được tự do.']]},
+   {t:'🧾 THANH TRA THUẾ BẤT NGỜ',d:'Cơ quan thuế yêu cầu giải trình hóa đơn quý trước.',
+    o:[['Mở sổ sách, hợp tác đầy đủ',{cash:-.04,credit:4},'Sổ sách sạch giúp bạn qua nhanh.'],
+       ['Nhờ người quen "lo giúp"',{cash:-.15,credit:-10},'Rủi ro pháp lý lớn. Đây là bài học đắt giá.']]},
+   {t:'🥊 ĐỐI THỦ: MINH THÉP',d:'Minh Thép, founder công ty cạnh tranh, đề nghị gặp. Anh ta vừa chào mời một nhân sự của bạn.',
+    o:[['Gặp thẳng, đề xuất hợp tác thị trường',{val:.03,rival:1,credit:2},'Minh Thép bất ngờ rồi gật đầu. Hai bên giữ khoảng cách nhưng tôn trọng nhau.'],
+       ['Phản công bằng khuyến mãi',{cash:-.12,val:.06,rival:-1},'Doanh số nhích lên, tiền mặt hao. Minh Thép ghi nhớ.']],rv:1},
+   {t:'🥊 MINH THÉP CÙNG GIÀNH NHÀ ĐẦU TƯ',d:'Cùng một quỹ đang xem hồ sơ của cả hai. Lần này Minh Thép nhắn: "Ai thắng thì mời bên kia ly cà phê."',
+    o:[['Nhận lời, cạnh tranh sòng phẳng',{credit:3,rival:1},'Cuộc thi lành mạnh, nhà đầu tư nể cả hai.'],
+       ['Gửi bản báo cáo chê đối thủ cho quỹ',{credit:-6,val:.04,rival:-2},'Quỹ không thích kiểu cạnh tranh này.']],rv:2}
+  ];
+  const SH=[['LẠM PHÁT CAO: chi phí tăng',.08],['QUỸ SIẾT VỐN: khó gọi hơn',.04],['THỊ TRƯỜNG HƯNG PHẤN: dễ gọi vốn',-.04],['ĐỒNG TIỀN BIẾN ĐỘNG: chi phí nhập khẩu lên',.06]];
+  const _sc=setupChapter;
+  setupChapter=function(){
+    const r=_sc.apply(this,arguments);
+    try{const s=SH[(CH.n-1)%4];CO.burn=r2(CO.burn*(1+s[1]));
+      setTimeout(()=>say('🌐 BỐI CẢNH CHƯƠNG '+CH.n+': '+s[0]),1500)}catch(e){}
+    return r};
+  const _ec=endChapter;
+  endChapter=function(ok){
+    const r=_ec.apply(this,arguments);
+    if(!ok){S.lessons++;sv();setTimeout(()=>say('📘 BÀI HỌC: giữ runway trên 6 tháng và sổ sách sạch. Thử lại sẽ dễ hơn!'),2500)}
+    return r};
+  let cd=0,open=0;
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:60;display:none;place-items:center;background:#000a;font-family:var(--ff)';
+  document.body.appendChild(ov);
+  function show(e){
+    open=1;try{G.keys={}}catch(x){}
+    ov.style.display='grid';
+    const st='style="display:block;width:100%;margin:8px 0;padding:8px;font:400 17px var(--ff);background:#1f52b0;color:#fff;border:2px solid #fff;border-radius:8px;cursor:pointer;text-align:left"';
+    ov.innerHTML='<div style="max-width:min(440px,92vw);background:#0e1730;border:3px solid #f2c46b;border-radius:12px;padding:14px;color:#fff"><div style="font-size:22px;color:#f2c46b">'+e.t+'</div><div style="font-size:17px;margin:8px 0">'+e.d+'</div>'+
+      e.o.map((o,i)=>'<button '+st+' data-i="'+i+'">'+o[0]+'</button>').join('')+'</div>';
+    ov.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const o=e.o[+b.dataset.i];ap(o[1]);
+      ov.innerHTML='<div style="max-width:min(440px,92vw);background:#0e1730;border:3px solid #f2c46b;border-radius:12px;padding:14px;color:#fff"><div style="font-size:17px">'+o[2]+'</div><button '+st+' id="evok">TIẾP TỤC</button></div>';
+      ov.querySelector('#evok').onclick=()=>{ov.style.display='none';open=0;cd=0};
+      try{AU.sfx('coin')}catch(x){}
+    });
+  }
+  function pick(){
+    let c=E.filter(e=>!e.rv||(e.rv===1)||(e.rv===2&&S.seen.includes('r1')));
+    const f=c.filter(e=>!S.seen.slice(-4).includes(e.t));
+    c=f.length?f:c;const e=c[Math.random()*c.length|0];
+    S.seen.push(e.t);if(e.rv===1)S.seen.push('r1');S.seen=S.seen.slice(-12);sv();return e}
+  setInterval(()=>{
+    try{
+      if(open||!G||G.intro||G.q||G.fin||(G.dlg&&G.dlg.on)||Menu.on||G.fade>.05){return}
+      if(++cd>=110)show(pick())
+    }catch(e){}
+  },1000);
+})();
 </script>
 </body>
 
