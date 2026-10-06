@@ -14542,10 +14542,10 @@ setupChapter = function() {
 const L=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},
 S=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},
 td=()=>new Date().toISOString().slice(0,10),yd=()=>new Date(Date.now()-864e5).toISOString().slice(0,10),
-EN=[['💀','PHÁ SẢN VÌ CHÁY TIỀN',s=>!s.ok],['🦄','UNICORN',s=>s.val>=80],['🧠','BẬC THẦY THẨM ĐỊNH',s=>s.acc>=90&&s.n>=4],['👑','FOUNDER GIỮ QUYỀN',s=>s.own>=50],['🚀','NGÔI SAO TĂNG TRƯỞNG',s=>s.val>=40],['🧱','SỐNG SÓT CÙNG NỢ',s=>s.debt>0],['🌱','SẠCH & BỀN VỮNG',s=>s.credit>=75],['📈','THƯƠNG VỤ ỔN ĐỊNH',()=>1]],
+EN=[['💀','PHÁ SẢN VÌ CHÁY TIỀN',s=>!s.ok],['🦄','UNICORN',s=>s.val>=80],['🧠','BẬC THẦY THẨM ĐỊNH',s=>s.acc>=90&&s.n>=4],['👑','FOUNDER GIỮ QUYỀN',s=>s.own>=50],['🚀','NGÔI SAO TĂNG TRƯỞNG',s=>s.val>=40],['🧱','SỐNG SÓT CÙNG NỢ',s=>s.debt>0],['🌱','SẠCH & BỀN VỮNG',s=>s.credit>=75],['🔥','SỐNG SÓT QUA KHỦNG HOẢNG',s=>s.cr>0],['📈','THƯƠNG VỤ ỔN ĐỊNH',()=>1]],
 sd=a=>()=>{a=a+1831565813|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296},
 hs=s=>[...s].reduce((a,c)=>Math.imul(a^c.charCodeAt(0),16777619),2166136261);
-let cb=null,REC=[],got=L('tvtd_end',[]),D=L('tvtd_daily',{}),box=null,kh=null;
+let cb=null,X={on:0,n:0,m:0},REC=[],got=L('tvtd_end',[]),D=L('tvtd_daily',{}),box=null,kh=null;
 const on=()=>D.on===td(),
 close=()=>{const f=cb;cb=null;box&&box.remove();box=null;kh&&removeEventListener('keydown',kh,true);kh=null;f&&f()},
 open=h=>{close();box=document.createElement('div');box.style.cssText='position:fixed;inset:0;z-index:99999;background:#000c;display:flex;align-items:center;justify-content:center;font-family:monospace;color:#e8f0ff';box.innerHTML='<div style="background:#14213d;border:2px solid #f2c46b;border-radius:10px;padding:16px;max-width:520px;width:92%;max-height:88vh;overflow:auto;font-size:13px;line-height:1.5">'+h+'<div style="margin-top:12px;text-align:right"><button class="btn g" id="v12x">ĐÓNG</button></div></div>';document.body.appendChild(box);box.querySelector('#v12x').onclick=close;kh=e=>{e.stopPropagation();e.preventDefault();if(e.code==='Escape')close()};addEventListener('keydown',kh,true)},
@@ -14574,13 +14574,25 @@ box.querySelector('#v12b').onclick=function(){if(rung)return;rung=1;this.remove(
 CO.pts+=b;CH.tot+=b;s.pts+=b;s.ipo=iv;try{CH.log.push('IPO '+s.name+': định giá '+iv+'M')}catch(e){}
 box.querySelector('#v12i').innerHTML='🔔 <b style="color:#7dffa0">'+tk+' LÊN SÀN!</b> Định giá IPO <b>'+iv+'M USD</b> · huy động thêm ~'+r1(iv*.15)+'M · phần của sáng lập ~'+fv+'M · phiên đầu '+'<b style="color:#7dffa0">+'+pop+'%</b> · thưởng +'+b+' điểm'};
 };
+const SC=[['⚖️','KHÁCH LỚN PHÁ SẢN','Khách hàng lớn nhất của {n} tuyên bố phá sản, khoản phải thu bốc hơi.'],['🛡️','SỰ CỐ BẢO MẬT','{n} bị rò rỉ dữ liệu, phải bồi thường và thuê đơn vị điều tra.'],['🧾','TRUY THU THUẾ','Cơ quan thuế truy thu và phạt vì hồ sơ của {n} có sai sót.'],['🏭','ĐỐI TÁC ĐÌNH CHỈ','Nhà cung cấp chính của {n} đòi thanh toán ngay và hủy hạn mức nợ.'],['📉','THỊ TRƯỜNG ĐẢO CHIỀU','Doanh thu {n} sụt mạnh sau khủng hoảng ngành, chi phí cố định vẫn phải trả.']],
+BK={vcb:['🏦 Vietcombank · CÁN BỘ TÍN DỤNG HÙNG',11,36,60],tcb:['🏦 Techcombank · CHUYÊN VIÊN TÍN DỤNG NAM',15,24,40],ang:['🤝 ANGEL INVESTOR · vay cá nhân',24,12,0]},
+crisis=()=>{const r1=x=>Math.round(x*10)/10,sc=SC[Math.random()*SC.length|0],loss=r1(CO.cash+CO.burn*(.5+Math.random())),need=r1(loss-CO.cash+CO.burn*3),rej={};X.on=1;X.m=CO.months;
+const fin=(msg,log)=>{close();X.on=0;X.n++;CH.log.push(log);try{addPts(4);AU.sfx('coin')}catch(e){}G.toast={s:msg,t:0}},
+ui=m=>{open('<h2 style="margin:0 0 6px;color:#ff7d7d">'+sc[0]+' KHỦNG HOẢNG: '+sc[1]+'</h2><div>'+sc[2].replace('{n}',ST.name)+'</div><div style="margin:6px 0">💸 Thiệt hại <b>'+loss+'M</b> · quỹ hiện có <b>'+r1(CO.cash)+'M</b> → <b style="color:#ff7d7d">thiếu '+r1(loss-CO.cash)+'M</b>. Cần huy động <b>'+need+'M</b> để bù lỗ và giữ 3 tháng chi phí.</div>'+(m?'<div style="color:#ffb86b;margin:4px 0">'+m+'</div>':'')+Object.keys(BK).map(k=>'<button class="btn g" style="display:block;width:100%;margin:4px 0"'+(rej[k]?' disabled':'')+' onclick="_v12l(\''+k+'\')">'+BK[k][0]+' · lãi '+BK[k][1]+'%/năm · '+BK[k][2]+' tháng'+(BK[k][3]?' · cần tín dụng ≥'+BK[k][3]:'')+'</button>').join('')+'<button class="btn g" style="display:block;width:100%;margin:4px 0" onclick="_v12l(\'vc\')">💼 VC · bán 6% cổ phần (không nợ)</button><button class="btn r" style="display:block;width:100%;margin:4px 0" onclick="_v12l(\'x\')">💀 Chấp nhận phá sản</button>');
+box.querySelector('#v12x').style.display='none';removeEventListener('keydown',kh,true);kh=e=>{e.stopPropagation();e.preventDefault()};addEventListener('keydown',kh,true)};
+window._v12l=k=>{if(k==='x'){close();X.on=0;endChapter(0);return}
+if(k==='vc'){CO.cash=r1(CO.cash-loss+need);CO.own=r1(Math.max(1,CO.own-6));return fin('VC rót '+need+'M, bạn nhượng 6% cổ phần','Khủng hoảng '+sc[1]+': VC rót '+need+'M đổi 6% cổ phần')}
+const b=BK[k];if(CO.credit<b[3]){rej[k]=1;CO.credit=Math.max(0,CO.credit-2);return ui('❌ '+b[0].split('·')[1].trim()+' từ chối: tín dụng '+CO.credit+' < '+b[3]+'. Hãy chọn nguồn khác.')}
+const i=b[1]/1200,m=Math.round(need*i/(1-Math.pow(1+i,-b[2]))*1e3)/1e3;CO.cash=r1(CO.cash-loss+need);CO.debt=r1(CO.debt+need);CO.loans.push({bank:b[0].split('·')[0].trim(),type:'unsecured',balance:need,principal:need,rate:b[1],term:b[2],monthly:m,paidM:0,missed:0,r:CO.r});
+fin('VAY '+need+'M · trả '+m+'M/tháng','Khủng hoảng '+sc[1]+': vay '+need+'M lãi '+b[1]+'%')};ui()};
+if(typeof monthTick==='function'){const mt=monthTick;monthTick=function(){mt.apply(this,arguments);try{if(CO.months<X.m)X.m=0;if(!X.on&&!box&&!G.intro&&!CH.busy&&CO.r<ROUNDS.length&&CO.months-X.m>=4&&Math.random()<.5+.1*CH.n)crisis()}catch(e){}}}
 const qp=Q.pick;Q.pick=function(n){const q=G.q;if(q&&q.mode==='ask'){const c=q.q.c[n];c&&REC.push({q:q.q.q,e:q.q.e,ok:c.sc>=3})}return qp.apply(this,arguments)};
 if(typeof beginRound==='function'){const br=beginRound;beginRound=function(k){if(!on())return br.apply(this,arguments);const r=Math.random;Math.random=sd(hs(td()+k)+CO.r*97);try{return br.apply(this,arguments)}finally{Math.random=r}}}
 if(typeof endChapter==='function'){const ec=endChapter;endChapter=function(ok){const w=CH.busy,nm=ST.name;ec.apply(this,arguments);if(w)return;
-const n=REC.length,r=REC.filter(x=>x.ok).length,s={ok,name:nm,val:CO.val,own:CO.own,debt:CO.debt,credit:CO.credit,pts:CO.pts,n,r,acc:n?Math.round(r*100/n):0,bad:REC.filter(x=>!x.ok&&x.e).slice(-3)};
+const n=REC.length,r=REC.filter(x=>x.ok).length,s={ok,name:nm,val:CO.val,own:CO.own,debt:CO.debt,credit:CO.credit,pts:CO.pts,cr:X.n,n,r,acc:n?Math.round(r*100/n):0,bad:REC.filter(x=>!x.ok&&x.e).slice(-3)};
 s.e=EN.find(x=>x[2](s));s.isNew=!got.includes(s.e[1]);if(s.isNew){got.push(s.e[1]);S('tvtd_end',got)}
 if(on()){s.daily=1;D.best=Math.max(D.best||0,s.pts);if(D.last!==td()){D.streak=D.last===yd()?(D.streak||0)+1:1;D.last=td()}S('tvtd_daily',D)}
-REC=[];setTimeout(()=>ok?ipo(s,()=>sum(s)):sum(s),700)}}
+REC=[];X.n=0;setTimeout(()=>ok?ipo(s,()=>sum(s)):sum(s),700)}}
 const panel=()=>open('<h2 style="margin:0 0 6px;color:#f2c46b">🎬 KẾT THÚC ('+got.length+'/'+EN.length+')</h2>'+EN.map(e=>'<div>'+(got.includes(e[1])?e[0]+' '+e[1]:'🔒 ???')+'</div>').join('')+'<h2 style="margin:12px 0 6px;color:#f2c46b">📅 THỬ THÁCH NGÀY</h2><div>Câu hỏi mỗi vòng được xáo theo seed của ngày '+td()+'. Hoàn thành thương vụ để ghi điểm và giữ chuỗi ngày liên tiếp.</div><div>Kỷ lục: '+(D.best||0)+' · Chuỗi: '+(D.streak||0)+' ngày · '+(on()?'<b style="color:#7dffa0">ĐANG BẬT</b>':'đang tắt')+'</div><div style="margin-top:8px"><button class="btn g" onclick="_v12d()">'+(on()?'TẮT':'BẬT')+' THỬ THÁCH HÔM NAY</button></div>');
 window._v12d=()=>{D.on=on()?0:td();S('tvtd_daily',D);panel()};
 const mr=Menu.renderMain;Menu.renderMain=function(el){mr.apply(this,arguments);try{const b=el.querySelector('button[onclick*="quest"]');if(b)b.insertAdjacentHTML('beforebegin','<button class="btn g" onclick="_v12p()">🎬 KẾT THÚC & THỬ THÁCH'+(on()?' 📅':'')+'</button>')}catch(e){}};
